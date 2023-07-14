@@ -20,6 +20,28 @@
 #include "DataFormatsParameters/GRPObject.h"
 #endif
 
+bool file_exists(const std::string &filename) {
+  return std::filesystem::exists(filename);
+}
+
+void savehistlist(TList* list, std::string filepath)
+{ 
+
+  //Create new histlist if one already exists 
+  int i = 0; 
+  while (file_exists(filepath+".root")){
+
+    filepath.pop_back();
+    filepath += std::to_string(i);
+    i += 1; 
+
+  }
+  filepath += ".root";
+  TFile *f = new TFile(filepath.c_str(),"RECREATE");
+  list->Write("histlist", TObject::kSingleKey);
+}
+
+
 TList* createhistlist(int (&pdgs)[8])
 {   
     TList *list = new TList();
@@ -49,46 +71,45 @@ Accumulator analyse(TTree* tr, const char* brname, TList* list)
   br->SetAddress(&hitvector);
   
 
+  //Open o2sim_Kine.root
+  //Get the O2Sim tree -> MCTracks branch 
+  TFile* o2sim_Kine = new TFile("o2sim_Kine.root");
+  TTree *tree = (TTree*)o2sim_Kine->Get("o2sim");
+  std::vector<o2::MCTrack>* MCTrack;
+  tree->SetBranchAddress("MCTrack",MCTrack);
+  //Okay how do we get specific PDG from it though, if track ID one, position i entry i in the branch?
+  //
+  
+  
+  //Need way of getting PDG number of particles in detectors!! 
   int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
+  
+  TH3I *detector = new TH3I(brname, "Histogram",100,-1000,1000,100,-1000,1000,100,-3000,3000);
 
   for (int i = 0; i < entries; ++i) {
     br->GetEntry(i);
     for (auto& hit : *hitvector) {
       prop.addHit(hit);
+      
+      int trackID = hit.GetTrackID();
 
-
-      int pdgnumb = hit.GetParticlePdg();
+      
+      // int pdgnumb = hit.GetParticlePdg(); <---- NEED THE CORRECT WAY OF RETREIVING THE PDG NUMBER OF THE PARTICLE! 
       if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs))
         {
         TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(pdgnumb)).c_str());
         hist->Fill(hit.GetX(), hit.GetY(), hit.GetZ(), 1.0);
         }
-      //How to get the hit co-ordinates... So do this over all events and compare to the steps taken to give areas of interest? 
-      //Also do it by particle. As much seperation in the final data as possible! Can combine but can't take apart!
-      //Class that we care about below
-      //https://github.com/AliceO2Group/AliceO2/blob/939bab9050d0719268520a25ee132a0bc971617f/DataFormats/simulation/include/SimulationDataFormat/BaseHits.h#L114
-
-
-      //Currently don't see a way of getting pdg number
-
-      //Getting individual detectors would also be sweet af - *brname* above!
-
-
-      //Need to work out how to get particle PDG tomorrow, it seems quite pivtol...
-      cout << hit.GetParticlePdg() << " Particle PDG" << endl;  //this works for some hits but not all of them...
-
-      /*  
-      Approach should be similar to how I approached the steps. 
-      Create a list of histograms for each detector, add the hits for each detector, save the TList root file
-      Then slightly alter the macro I've made to combine all the hits from the detectors to build an overall picture of the hits
-      
-      */
     }
-  
-  list->Add(particleHistograms); //Add the list of the particle detector histograms to the TList* 
-  //list->Last()->SetName(brname.c_str());
   }
+
+  //Adds the list of hits for each particle type we care about in the detector to the saved file.
+  TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
+  particleHistograms->Write(brname.c_str(), TObject::kSingleKey);
+  delete f;
+
+
   prop.normalize();
   return prop;
 };
@@ -234,7 +255,7 @@ struct TPCHitStats : public HitStatsBase {
 }; // end struct
 
 // need a special version for TPC since loop over sectors
-TPCHitStats analyseTPC(TTree* tr, TList* list)
+TPCHitStats analyseTPC(TTree* tr)
 {
   TPCHitStats prop;
   for (int sector = 0; sector < 35; ++sector) {
@@ -260,31 +281,31 @@ TPCHitStats analyseTPC(TTree* tr, TList* list)
 };
 
 // do comparison for ITS
-void analyzeITS(TTree* reftree, TList* list)
+void analyzeITS(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::itsmft::Hit, ITSHitStats>(reftree, "ITSHit",list);
+  auto refresult = analyse<o2::itsmft::Hit, ITSHitStats>(reftree, "ITSHit");
   std::cout << gPrefix << " ITS ";
   refresult.print();
 }
 
 // do comparison for TOF
-void analyzeTOF(TTree* reftree,TList* list)
+void analyzeTOF(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::tof::HitType, HitStats<o2::tof::HitType>>(reftree, "TOFHit",list);
+  auto refresult = analyse<o2::tof::HitType, HitStats<o2::tof::HitType>>(reftree, "TOFHit");
   std::cout << gPrefix << " TOF ";
   refresult.print();
 }
 
 // do comparison for EMC
-void analyzeEMC(TTree* reftree,TList* list)
+void analyzeEMC(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::emcal::Hit, HitStats<o2::emcal::Hit>>(reftree, "EMCHit",list);
+  auto refresult = analyse<o2::emcal::Hit, HitStats<o2::emcal::Hit>>(reftree, "EMCHit");
   std::cout << gPrefix << " EMC ";
   refresult.print();
 }
@@ -303,102 +324,102 @@ void analyzeTRD(TTree* reftree)
 */
 
 // do comparison for PHS
-void analyzePHS(TTree* reftree,TList* list)
+void analyzePHS(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::phos::Hit, HitStats<o2::phos::Hit>>(reftree, "PHSHit",list);
+  auto refresult = analyse<o2::phos::Hit, HitStats<o2::phos::Hit>>(reftree, "PHSHit");
   std::cout << gPrefix << " PHS ";
   refresult.print();
 }
 
-void analyzeFT0(TTree* reftree,TList* list)
+void analyzeFT0(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::ft0::HitType, HitStats<o2::ft0::HitType>>(reftree, "FT0Hit",list);
+  auto refresult = analyse<o2::ft0::HitType, HitStats<o2::ft0::HitType>>(reftree, "FT0Hit");
   std::cout << gPrefix << " FT0 ";
   refresult.print();
 }
 
-void analyzeHMP(TTree* reftree,TList* list)
+void analyzeHMP(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::hmpid::HitType, HitStats<o2::hmpid::HitType>>(reftree, "HMPHit",list);
+  auto refresult = analyse<o2::hmpid::HitType, HitStats<o2::hmpid::HitType>>(reftree, "HMPHit");
   std::cout << gPrefix << " HMP ";
   refresult.print();
 }
 
-void analyzeMFT(TTree* reftree,TList* list)
+void analyzeMFT(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::itsmft::Hit, ITSHitStats>(reftree, "MFTHit",list);
+  auto refresult = analyse<o2::itsmft::Hit, ITSHitStats>(reftree, "MFTHit");
   std::cout << gPrefix << " MFT ";
   refresult.print();
 }
 
-void analyzeFDD(TTree* reftree,TList* list)
+void analyzeFDD(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::fdd::Hit, HitStats<o2::fdd::Hit>>(reftree, "FDDHit",list);
+  auto refresult = analyse<o2::fdd::Hit, HitStats<o2::fdd::Hit>>(reftree, "FDDHit");
   std::cout << gPrefix << " FDD ";
   refresult.print();
 }
 
-void analyzeFV0(TTree* reftree,TList* list)
+void analyzeFV0(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::fv0::Hit, HitStats<o2::fv0::Hit>>(reftree, "FV0Hit",list);
+  auto refresult = analyse<o2::fv0::Hit, HitStats<o2::fv0::Hit>>(reftree, "FV0Hit");
   std::cout << gPrefix << " FV0 ";
   refresult.print();
 }
 
-void analyzeMCH(TTree* reftree,TList* list)
+void analyzeMCH(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::mch::Hit, HitStats<o2::mch::Hit>>(reftree, "MCHHit",list);
+  auto refresult = analyse<o2::mch::Hit, HitStats<o2::mch::Hit>>(reftree, "MCHHit");
   std::cout << gPrefix << " MCH ";
   refresult.print();
 }
 
-void analyzeMID(TTree* reftree,TList* list)
+void analyzeMID(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::mid::Hit, HitStats<o2::mid::Hit>>(reftree, "MIDHit",list);
+  auto refresult = analyse<o2::mid::Hit, HitStats<o2::mid::Hit>>(reftree, "MIDHit");
   std::cout << gPrefix << " MID ";
   refresult.print();
 }
 
-void analyzeCPV(TTree* reftree,TList* list)
+void analyzeCPV(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::cpv::Hit, HitStats<o2::cpv::Hit>>(reftree, "CPVHit",list);
+  auto refresult = analyse<o2::cpv::Hit, HitStats<o2::cpv::Hit>>(reftree, "CPVHit");
   std::cout << gPrefix << " CPV ";
   refresult.print();
 }
 
-void analyzeZDC(TTree* reftree,TList* list)
+void analyzeZDC(TTree* reftree)
 {
   if (!reftree)
     return;
-  auto refresult = analyse<o2::zdc::Hit, HitStats<o2::zdc::Hit>>(reftree, "ZDCHit",list);
+  auto refresult = analyse<o2::zdc::Hit, HitStats<o2::zdc::Hit>>(reftree, "ZDCHit");
   std::cout << gPrefix << " ZDC ";
   refresult.print();
 }
 
-void analyzeTPC(TTree* reftree,TList* list)
+void analyzeTPC(TTree* reftree)
 {
   if (!reftree)
     return;
   // need to loop over sectors
-  auto refresult = analyseTPC(reftree, list); //what?
+  auto refresult = analyseTPC(reftree); //what?
   std::cout << gPrefix << " TPC ";
   refresult.print();
 }
@@ -426,30 +447,30 @@ TTree* getHitTree(o2::parameters::GRPObject const* grp, const char* filebase, o2
 //
 void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
 {
-  cout << "beep boop" << endl;
   gPrefix = prefix;
 
-  TList* list = new TList(); //initialise TList
-
+  //Just clearing the existing file so that it doesn't get written over again and again giving false data:(
+  TFile *f = new TFile("HitsInDetectorsHistograms.root","RECREATE");
+  delete f;
 
   // READ GRP AND ITERATE OVER DETECTED PARTS
   auto grp = o2::parameters::GRPObject::loadFrom(filebase);
 
   // should correspond to the same number as defined in DetID
-  analyzeITS(getHitTree(grp, filebase, o2::detectors::DetID::ITS),list);
-  analyzeTPC(getHitTree(grp, filebase, o2::detectors::DetID::TPC),list); ////////This dude plays by different rules.
-  analyzeMFT(getHitTree(grp, filebase, o2::detectors::DetID::MFT),list);
-  analyzeTOF(getHitTree(grp, filebase, o2::detectors::DetID::TOF),list);
-  analyzeEMC(getHitTree(grp, filebase, o2::detectors::DetID::EMC),list);
+  analyzeITS(getHitTree(grp, filebase, o2::detectors::DetID::ITS));
+  analyzeTPC(getHitTree(grp, filebase, o2::detectors::DetID::TPC)); ////////This dude plays by different rules.
+  analyzeMFT(getHitTree(grp, filebase, o2::detectors::DetID::MFT));
+  analyzeTOF(getHitTree(grp, filebase, o2::detectors::DetID::TOF));
+  analyzeEMC(getHitTree(grp, filebase, o2::detectors::DetID::EMC));
   //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD));
-  analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS),list);
-  analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV),list);
-  analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0),list);
-  analyzeFV0(getHitTree(grp, filebase, o2::detectors::DetID::FV0),list);
-  analyzeFDD(getHitTree(grp, filebase, o2::detectors::DetID::FDD),list);
-  analyzeHMP(getHitTree(grp, filebase, o2::detectors::DetID::HMP),list);
-  analyzeMCH(getHitTree(grp, filebase, o2::detectors::DetID::MCH),list);
-  analyzeMID(getHitTree(grp, filebase, o2::detectors::DetID::MID),list);
-  analyzeZDC(getHitTree(grp, filebase, o2::detectors::DetID::ZDC),list);
+  analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS));
+  analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV));
+  analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));
+  analyzeFV0(getHitTree(grp, filebase, o2::detectors::DetID::FV0));
+  analyzeFDD(getHitTree(grp, filebase, o2::detectors::DetID::FDD));
+  analyzeHMP(getHitTree(grp, filebase, o2::detectors::DetID::HMP));
+  analyzeMCH(getHitTree(grp, filebase, o2::detectors::DetID::MCH));
+  analyzeMID(getHitTree(grp, filebase, o2::detectors::DetID::MID));
+  analyzeZDC(getHitTree(grp, filebase, o2::detectors::DetID::ZDC));
   // analyzeACO(getHitTree(grp, filebase, o2::detectors::DetID::ACO));
 }

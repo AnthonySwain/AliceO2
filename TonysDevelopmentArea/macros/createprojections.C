@@ -1,6 +1,5 @@
-//Macro to create a 3D histogram of different particles step locations in the ALICE detector. 
-
-//I'm just going to assume the data is nicely laid out (i.e no steps outside the ALICE detector region), if this doesn't happen to be the case, a fix will have to be implemented but for now - fingers crossed!
+//Macro to create various projections from a 3D histogram of data. 
+//Code is quite dirty currently, needs a clean-up
 
 #include "/home/answain/alice/VMCStepLogger/MCStepLogger/include/MCStepLogger/StepInfo.h"
 
@@ -62,10 +61,6 @@ TList* openhistlist(std::string filepath)
     return(list);
 }
 
-
-
-
-
 void ThreeDHistogram(){
     int pdgs[8] = {11,13,-11,-13,22,111,211,-211};
     
@@ -94,8 +89,4 @@ void ThreeDHistogram(){
         ProjectionHistogram("zx",hist,i);
         ProjectionHistogram("zy",hist,i);
     }
-   
 }
-
-
-//test
