@@ -34,6 +34,105 @@
 #include <CommonUtils/FileSystemUtils.h>
 #include "SimConfig/GlobalProcessCutSimParam.h"
 
+
+
+
+////////////////////////////////////////////////
+//#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
+
+
+#include <TCanvas.h>
+#include <TFile.h>
+#include <TH3I.h>
+#include <TNtuple.h>
+#include <TString.h>
+#include <TTree.h>
+#include <TObject.h>
+#include <TList.h>
+#include <filesystem>
+
+namespace TonysDevelopmentArea{
+
+bool file_exists(const std::string &filename) {
+  return std::filesystem::exists(filename);
+}
+
+TList* createhistlist(int (&pdgs)[8])
+{   
+    TList *list = new TList();
+    
+    for (int i : pdgs){
+        std::string name1 = std::to_string(i);
+        std::string name2 = "Histogram"+std::to_string(i);
+        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,100,-3000,3000);
+        list -> Add(h1);
+    }
+   return (list);
+}
+
+void savehistlist(TList* list, std::string filepath)
+{ 
+
+  //Create new histlist if one already exists 
+  int i = 0; 
+  while (file_exists(filepath+".root")){
+
+    filepath.pop_back();
+    i += 1; 
+    filepath += std::to_string(i);
+    
+
+  }
+  filepath += ".root";
+  TFile *f = new TFile(filepath.c_str(),"RECREATE");
+  list->Write("histlist", TObject::kSingleKey);
+}
+
+TList* openhistlist(std::string filepath)
+{
+    TFile * file = new TFile(filepath.c_str(),"READ");
+    TList* list;
+    file->GetObject("histlist",list);
+    return(list);
+}
+
+
+void AddToHistogram(std::string histogramlistfilepath, std::vector<std::array<float,4>> data)
+{
+/*  histogramlistfilepath - where to save or find the TList root file of the histograms 
+    std::vector<std::array<float,4>>  data - {x,y,z,PDGid}
+*/
+
+int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model.
+
+TList *list = createhistlist(pdgs);
+  
+//Filling the histograms with data
+for (auto &element : data)
+{
+auto pdg = element[3];
+int pdgnumb = static_cast<int>(pdg);
+
+
+//If PDG number isn't in the pdg list we just continue 
+if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs)){
+  TH3I* hist = (TH3I*)list->FindObject((std::to_string(pdgnumb)).c_str());
+  hist->Fill(element[0],element[1],element[2],1.0);
+}
+
+else{
+  continue;
+}
+}
+savehistlist(list, histogramlistfilepath);
+}
+
+
+} //end namespace TonysDevelopmentArea
+
+
+/////////////////////////////////////////////////
+
 namespace o2
 {
 namespace steer
@@ -58,6 +157,18 @@ void O2MCApplicationBase::Stepping()
 {
   mStepCounter++;
 
+/////////////////////////////////////////////////////////
+  //TFile *f = new TFile(("/home/answain/alice/HistListDump/HistList.root")   ,"RECREATE");
+  float xstep,ystep,zstep;
+  fMC->TrackPosition(xstep,ystep,zstep);
+  auto pdg = fMC->TrackPid();
+  std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
+  O2MCApplicationBase::data.push_back(datapoint); //Needs to be something that can be called
+
+
+/////////////////////////////////////////////////////////
+
+
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();
   auto& params = o2::GlobalProcessCutSimParam::Instance();
@@ -67,6 +178,10 @@ void O2MCApplicationBase::Stepping()
   }
 
   mLongestTrackTime = std::max((double)mLongestTrackTime, tof);
+
+
+  
+
 
   if (mCutParams.stepFiltering) {
     // we can kill tracks here based on our
@@ -195,10 +310,23 @@ void O2MCApplicationBase::finishEventCommon()
   LOG(info) << "This event/chunk did " << mStepCounter << " steps";
   LOG(info) << "Longest track time is " << mLongestTrackTime;
 
+  ////////////////////////////////////////////////////////////////////////////
+
+
+  TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
+  O2MCApplicationBase::data.clear();
+  //TonysDevelopmentArea::savehistlist(list, "HistList.root");
+  ////////////////////////////////////////////////////////////////////////////
+
+
+
   auto header = static_cast<o2::dataformats::MCEventHeader*>(fMCEventHeader);
   header->getMCEventStats().setNSteps(mStepCounter);
 
   static_cast<o2::data::Stack*>(GetStack())->updateEventStats();
+  //Putting my code here causes a crash....... need to work out what is wrong with the code... 
+  //I assume it is something with O2MCApplicationBase::Data that is messing everything up as I'm not quite sure if it can be handled in teh way im handling it
+
 }
 
 void O2MCApplicationBase::FinishEvent()
@@ -208,9 +336,23 @@ void O2MCApplicationBase::FinishEvent()
   auto header = static_cast<o2::dataformats::MCEventHeader*>(fMCEventHeader);
   auto& confref = o2::conf::SimConfig::Instance();
 
+  //////////////////////////////////////////////////////
+  //Calls function where steps are written to TList of histograms
+
+  //This isn't running here.
+  //Crashes out if I stick it in finishEventCommon()
+  //Screams* 
+
+  
+  //TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
+  //LOG(info) << "EventFinished, Code Executed"; //WE DONT SEE THIS GRR
+  //////////////////////////////////////////////////////
+
+
   if (confref.isFilterOutNoHitEvents() && header->getMCEventStats().getNHits() == 0) {
     LOG(info) << "Discarding current event due to no hits";
     SetSaveCurrentEvent(false);
+
   }
 
   // dispatch to function in FairRoot
@@ -228,6 +370,15 @@ void O2MCApplicationBase::BeginEvent()
 
   mStepCounter = 0;
   mLongestTrackTime = 0;
+
+  ////////////////////////////////////////
+
+
+  std::vector<std::array<float,4>> data;  //Initialise vector for data of steps for the event 
+
+
+
+  ////////////////////////////////////////
 }
 
 void addSpecialParticles()

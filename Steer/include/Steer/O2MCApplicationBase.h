@@ -34,6 +34,11 @@ namespace steer
 // and tracking limits
 class O2MCApplicationBase : public FairMCApplication
 {
+  //////////////////////////////////////////
+
+  std::vector<std::array<float,4>> data;
+
+  /////////////////////////////////
  public:
   O2MCApplicationBase() : FairMCApplication(), mCutParams(o2::conf::SimCutParams::Instance()) { initTrackRefHook(); }
   O2MCApplicationBase(const char* name, const char* title, TObjArray* ModList, const char* MatName) : FairMCApplication(name, title, ModList, MatName), mCutParams(o2::conf::SimCutParams::Instance())
@@ -51,7 +56,7 @@ class O2MCApplicationBase : public FairMCApplication
   void InitGeometry() override;
   bool MisalignGeometry() override;
   void AddParticles() override;
-
+  
   // specific implementation of our hard geometry limits
   double TrackingRmax() const override { return mCutParams.maxRTracking; }
   double TrackingZmax() const override { return mCutParams.maxAbsZTracking; }

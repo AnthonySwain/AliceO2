@@ -434,6 +434,7 @@ int main(int argc, char* argv[])
 {
   LOG(info) << "This is o2-sim version " << o2::fullVersion() << " (" << o2::gitRevision() << ")";
   LOG(info) << o2::getBuildInfo();
+  //LOG(info) << "Testing123"; 
 
   signal(SIGINT, sighandler);
   signal(SIGTERM, sighandler);

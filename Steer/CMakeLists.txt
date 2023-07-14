@@ -44,3 +44,4 @@ o2_add_test(HitProcessingManager
             LABELS steer)
 
 add_subdirectory(DigitizerWorkflow)
+

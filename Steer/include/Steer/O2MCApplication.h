@@ -23,6 +23,12 @@
 #include <FairRootManager.h>
 #include <FairDetector.h>
 
+////////////////////////////////
+//#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
+
+
+///////////////////////////////
+
 #include <fairmq/FwdDecls.h>
 
 namespace o2
@@ -38,6 +44,8 @@ class O2MCApplication : public O2MCApplicationBase
  public:
   using O2MCApplicationBase::O2MCApplicationBase;
   ~O2MCApplication() override = default;
+
+
 
   // triggers data sending/io
   void SendData();
@@ -63,6 +71,8 @@ class O2MCApplication : public O2MCApplicationBase
       det->EndOfEvent();
     }
     fStack->Reset();
+
+
   }
 
   /** Define actions at the end of run */
