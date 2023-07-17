@@ -54,10 +54,17 @@
 namespace TonysDevelopmentArea{
 
 bool file_exists(const std::string &filename) {
+  //Checks whether a file exists on the system
+  //Input is the filepath of said file. 
   return std::filesystem::exists(filename);
 }
 
+
+
+
 TList* createhistlist(int (&pdgs)[8])
+//Creates and returns a list of histograms for each particle that is wanted to be investigated
+// Input is a int array of PDGid of particles.
 {   
     TList *list = new TList();
     
@@ -70,14 +77,29 @@ TList* createhistlist(int (&pdgs)[8])
    return (list);
 }
 
+int numDigits(int number)
+{
+    int digits = 1;
+
+    while (number>=10) {
+        number /= 10;
+        digits++;
+    }
+    return digits;
+    }
+
+
 void savehistlist(TList* list, std::string filepath)
 { 
 
   //Create new histlist if one already exists 
   int i = 0; 
   while (file_exists(filepath+".root")){
-
+    int digits = numDigits(i);
+    std::cout << digits << std::endl;
+    for (int j=0; j<digits; j++){
     filepath.pop_back();
+    }
     i += 1; 
     filepath += std::to_string(i);
     
@@ -89,6 +111,7 @@ void savehistlist(TList* list, std::string filepath)
 }
 
 TList* openhistlist(std::string filepath)
+//Open and return an existing TList, just requries filepath
 {
     TFile * file = new TFile(filepath.c_str(),"READ");
     TList* list;
@@ -101,6 +124,8 @@ void AddToHistogram(std::string histogramlistfilepath, std::vector<std::array<fl
 {
 /*  histogramlistfilepath - where to save or find the TList root file of the histograms 
     std::vector<std::array<float,4>>  data - {x,y,z,PDGid}
+    
+    Writes data to a histogram and saves it. (Seperated by particle, (hopefully detector) in a TList object saved in a root file.)
 */
 
 int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model.
@@ -158,10 +183,20 @@ void O2MCApplicationBase::Stepping()
   mStepCounter++;
 
 /////////////////////////////////////////////////////////
-  //TFile *f = new TFile(("/home/answain/alice/HistListDump/HistList.root")   ,"RECREATE");
+
+  //Get x,y,z locations
   float xstep,ystep,zstep;
   fMC->TrackPosition(xstep,ystep,zstep);
+
+  //PDG number of the particle
   auto pdg = fMC->TrackPid();
+
+  //Get which volume the paeticle is in
+  auto VolName = fMC->CurrentVolName();
+  auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
+  std::cout << VolName << std::endl; //Can assign it to a detector though...
+
+  //Append the data of the step to the data vector
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
   O2MCApplicationBase::data.push_back(datapoint); //Needs to be something that can be called
 
@@ -313,9 +348,12 @@ void O2MCApplicationBase::finishEventCommon()
   ////////////////////////////////////////////////////////////////////////////
 
 
+  //Saves the Histogram for this event
   TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
-  O2MCApplicationBase::data.clear();
-  //TonysDevelopmentArea::savehistlist(list, "HistList.root");
+
+  //clears the data in the vector: data, for the next event. 
+  O2MCApplicationBase::data.clear(); 
+
   ////////////////////////////////////////////////////////////////////////////
 
 
@@ -335,19 +373,6 @@ void O2MCApplicationBase::FinishEvent()
 
   auto header = static_cast<o2::dataformats::MCEventHeader*>(fMCEventHeader);
   auto& confref = o2::conf::SimConfig::Instance();
-
-  //////////////////////////////////////////////////////
-  //Calls function where steps are written to TList of histograms
-
-  //This isn't running here.
-  //Crashes out if I stick it in finishEventCommon()
-  //Screams* 
-
-  
-  //TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
-  //LOG(info) << "EventFinished, Code Executed"; //WE DONT SEE THIS GRR
-  //////////////////////////////////////////////////////
-
 
   if (confref.isFilterOutNoHitEvents() && header->getMCEventStats().getNHits() == 0) {
     LOG(info) << "Discarding current event due to no hits";
@@ -373,9 +398,8 @@ void O2MCApplicationBase::BeginEvent()
 
   ////////////////////////////////////////
 
-
-  std::vector<std::array<float,4>> data;  //Initialise vector for data of steps for the event 
-
+  //Initialise vector for data of steps for the event 
+  std::vector<std::array<float,4>> data; 
 
 
   ////////////////////////////////////////

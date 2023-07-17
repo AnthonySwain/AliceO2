@@ -20,9 +20,22 @@
 #include "DataFormatsParameters/GRPObject.h"
 #endif
 
+#include <typeinfo>
+
 bool file_exists(const std::string &filename) {
   return std::filesystem::exists(filename);
 }
+
+int numDigits(int number)
+{
+    int digits = 1;
+
+    while (number>=10) {
+        number /= 10;
+        digits++;
+    }
+    return digits;
+    }
 
 void savehistlist(TList* list, std::string filepath)
 { 
@@ -30,17 +43,20 @@ void savehistlist(TList* list, std::string filepath)
   //Create new histlist if one already exists 
   int i = 0; 
   while (file_exists(filepath+".root")){
-
+    int digits = numDigits(i);
+    std::cout << digits << std::endl;
+    for (int j=0; j<digits; j++){
     filepath.pop_back();
-    filepath += std::to_string(i);
+    }
     i += 1; 
+    filepath += std::to_string(i);
+    
 
   }
   filepath += ".root";
   TFile *f = new TFile(filepath.c_str(),"RECREATE");
   list->Write("histlist", TObject::kSingleKey);
 }
-
 
 TList* createhistlist(int (&pdgs)[8])
 {   
@@ -58,26 +74,28 @@ TList* createhistlist(int (&pdgs)[8])
 TString gPrefix("");
 
 template <typename Hit, typename Accumulator>
-Accumulator analyse(TTree* tr, const char* brname, TList* list)
+Accumulator analyse(TTree* tr, const char* brname)
 {
   Accumulator prop;
   auto br = tr->GetBranch(brname);
-  std::cout << "Testing 123 Testing 123 "<< brname << std::endl;
   if (!br) {
     return prop;
   }
   auto entries = br->GetEntries();
+  std::cout << entries << std::endl;
+  
   std::vector<Hit>* hitvector = nullptr;
   br->SetAddress(&hitvector);
   
-
   //Open o2sim_Kine.root
   //Get the O2Sim tree -> MCTracks branch 
   TFile* o2sim_Kine = new TFile("o2sim_Kine.root");
   TTree *tree = (TTree*)o2sim_Kine->Get("o2sim");
   std::vector<o2::MCTrack>* MCTrack;
-  tree->SetBranchAddress("MCTrack",MCTrack);
-  //Okay how do we get specific PDG from it though, if track ID one, position i entry i in the branch?
+  tree->SetBranchAddress("MCTrack",&MCTrack);
+  std::cout << tree->GetEntries() << std::endl;
+  
+  //Okay how do we get specific PDG from it though, is track ID position i entry i in the branch?
   //
   
   
@@ -85,32 +103,50 @@ Accumulator analyse(TTree* tr, const char* brname, TList* list)
   int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
   
-  TH3I *detector = new TH3I(brname, "Histogram",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+  //TH3I *detector = new TH3I(brname, "Histogram",100,-1000,1000,100,-1000,1000,100,-3000,3000);
 
   for (int i = 0; i < entries; ++i) {
+    std::cout<< "Start of first loop" << std::endl;
     br->GetEntry(i);
+    std::cout<< "Start of tree" << std::endl;
+    tree->GetEntry(i);
+    std::cout<< "end of tree" << std::endl;
+
     for (auto& hit : *hitvector) {
+      std::cout<< "Start of second" << std::endl;
       prop.addHit(hit);
       
-      int trackID = hit.GetTrackID();
+      //Get PDG number of the particle 
+      Int_t trackID = hit.GetTrackID();
 
-      
-      // int pdgnumb = hit.GetParticlePdg(); <---- NEED THE CORRECT WAY OF RETREIVING THE PDG NUMBER OF THE PARTICLE! 
-      if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs))
+      std::cout<< "Before getting PdgCode" << std::endl;
+      o2::MCTrack thisTrack = (*MCTrack).at(trackID);
+      int PDGnumb = thisTrack.GetPdgCode();
+
+
+      //Write to corresponding histogram of 
+      std::cout<< "Before if Pdg in pdgs" << std::endl;
+      if (std::find(std::begin(pdgs), std::end(pdgs), PDGnumb) != std::end(pdgs))
         {
-        TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(pdgnumb)).c_str());
+        TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(PDGnumb)).c_str());
         hist->Fill(hit.GetX(), hit.GetY(), hit.GetZ(), 1.0);
+        
         }
+        std::cout<< "After if Pdg in pdgs" << std::endl;
     }
   }
 
   //Adds the list of hits for each particle type we care about in the detector to the saved file.
+  std::cout<< "Creating file" << std::endl;
   TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
-  particleHistograms->Write(brname.c_str(), TObject::kSingleKey);
+  std::cout<< "Saving file" << std::endl;
+  particleHistograms->Write(brname/*.c_str()*/, TObject::kSingleKey);
   delete f;
+  delete o2sim_Kine;
 
 
   prop.normalize();
+  std::cout<< "End of function" << std::endl;
   return prop;
 };
 
@@ -449,7 +485,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
 {
   gPrefix = prefix;
 
-  //Just clearing the existing file so that it doesn't get written over again and again giving false data:(
+  //Clear the existing file so that it doesn't get written on-top of over again and again giving false data:(
   TFile *f = new TFile("HitsInDetectorsHistograms.root","RECREATE");
   delete f;
 
@@ -462,7 +498,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
   analyzeMFT(getHitTree(grp, filebase, o2::detectors::DetID::MFT));
   analyzeTOF(getHitTree(grp, filebase, o2::detectors::DetID::TOF));
   analyzeEMC(getHitTree(grp, filebase, o2::detectors::DetID::EMC));
-  //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD));
+  //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD)); //Why doesn't this dude work:(
   analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS));
   analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV));
   analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));
