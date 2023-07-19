@@ -86,3 +86,11 @@ bazel-*
 DataFormats/Detectors/CTP/include/DataFormatsCTP/Scalers.h
 dpl-config.json
 O2.code-workspace
+TonysDevelopmentArea/macros/AllParticlesListed/3D.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/3DHits.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/yxProjection.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/yxProjectionHits.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/zxProjection.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/zxProjectionHits.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/zyProjection.pdf
+TonysDevelopmentArea/macros/AllParticlesListed/zyProjectionHits.pdf

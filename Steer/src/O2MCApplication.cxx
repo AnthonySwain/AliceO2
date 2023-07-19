@@ -96,7 +96,7 @@ void savehistlist(TList* list, std::string filepath)
   int i = 0; 
   while (file_exists(filepath+".root")){
     int digits = numDigits(i);
-    std::cout << digits << std::endl;
+    //std::cout << digits << std::endl;
     for (int j=0; j<digits; j++){
     filepath.pop_back();
     }
@@ -108,6 +108,7 @@ void savehistlist(TList* list, std::string filepath)
   filepath += ".root";
   TFile *f = new TFile(filepath.c_str(),"RECREATE");
   list->Write("histlist", TObject::kSingleKey);
+  delete f;
 }
 
 TList* openhistlist(std::string filepath)
@@ -117,6 +118,8 @@ TList* openhistlist(std::string filepath)
     TList* list;
     file->GetObject("histlist",list);
     return(list);
+   
+
 }
 
 
@@ -194,7 +197,7 @@ void O2MCApplicationBase::Stepping()
   //Get which volume the paeticle is in
   auto VolName = fMC->CurrentVolName();
   auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
-  std::cout << VolName << std::endl; //Can assign it to a detector though...
+  //std::cout << VolName << std::endl; //Can assign it to a detector though...
 
   //Append the data of the step to the data vector
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};

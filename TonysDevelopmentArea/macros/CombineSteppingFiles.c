@@ -1,3 +1,5 @@
+//Combines all the stepping root files
+
 TList* openhistlist(std::string filepath)
 {
     TFile * file = new TFile(filepath.c_str(),"READ");
@@ -6,27 +8,42 @@ TList* openhistlist(std::string filepath)
     return(list);
 }
 
+int numDigits(int number)
+{
+    int digits = 1;
+
+    while (number>=10) {
+        number /= 10;
+        digits++;
+    }
+    return digits;
+    }
+
 void savehistlist(TList* list, std::string filepath)
 { 
   //Create new histlist if one already exists 
   filepath += ".root";
   TFile *f = new TFile(filepath.c_str(),"RECREATE");
   list->Write("histlist", TObject::kSingleKey);
+  delete f;
 }
 
 bool file_exists(const std::string &filename) {
   return std::filesystem::exists(filename);
 }
 
-void macrotocombine(){
+void CombineSteppingFiles(){
+    //Combines all the stepping root files
     int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //Definitely need a way of synchronising this across files
     //Loop through root files, merging the histograms of the individual particles 
+
+    //run in the folder where the simulation was ran.
     
     //HistList0.root, HistList1.root ect... ect...
 
     std::string filename;
     std::string ending;
-    filename = "/home/answain/alice/O2Sim-serial/HistList0";
+    filename = "HistList0";
     ending = ".root";
 
   
@@ -46,9 +63,7 @@ void macrotocombine(){
     */
 
     int i = 0;
-    filename.pop_back();
-    i += 1; 
-    filename += std::to_string(i);
+    
 
     TList* list;
     while (file_exists(filename+ending)){
@@ -65,13 +80,32 @@ void macrotocombine(){
 
 
 
+    int digits = numDigits(i);
+    for (int j=0; j<digits; j++){
     filename.pop_back();
-    i += 1; 
+    }
+    i += 1;
+
     filename += std::to_string(i);
     }
 
 
 
     savehistlist(zerolist,"CombinedHistList");
+    delete zerolist;
+    
+    TH3I* combinedPDGs = new TH3I("CombinedHistList", "AllParticleSteps",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+    TList* combinedlist;
+    combinedlist = openhistlist("CombinedHistList.root");
+    
+
+    /**/
+    for (int i = 0 ; i<(sizeof(pdgs)/sizeof(int)); i++){
+        combinedPDGs->Add((TH3I*)combinedlist->FindObject((std::to_string(pdgs[i]).c_str())));
+
+    }
+    //savehistlist(combinedPDGs,"AllSteps");
+    TFile *f = new TFile("AllSteps.root","RECREATE");
+    combinedPDGs->Write("Allsteps", TObject::kSingleKey);
 
 }
