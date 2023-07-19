@@ -47,7 +47,7 @@ void hitsforeachdetector(){
     
 
     const char* detectors[13] = {"ITSHit","MFTHit","TOFHit","EMCHit","PHSHit","CPVHit",
-    "FT0Hit","FV0Hit","FDDHit","HMPHit", "MCHHit", "MIDHit", "ZDCHit"};
+    "FV0Hit","FDDHit","HMPHit", "MCHHit", "MIDHit", "ZDCHit"};
 
     int pdgs[8] = {11,13,-11,-13,22,111,211,-211};
     int no_pdgs = sizeof(pdgs)/sizeof(int);

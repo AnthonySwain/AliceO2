@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////
 //#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
 
-
+#include <unistd.h>
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH3I.h>
@@ -58,8 +58,6 @@ bool file_exists(const std::string &filename) {
   //Input is the filepath of said file. 
   return std::filesystem::exists(filename);
 }
-
-
 
 
 TList* createhistlist(int (&pdgs)[8])
@@ -89,6 +87,7 @@ int numDigits(int number)
     }
 
 
+/*
 void savehistlist(TList* list, std::string filepath)
 { 
 
@@ -110,6 +109,41 @@ void savehistlist(TList* list, std::string filepath)
   list->Write("histlist", TObject::kSingleKey);
   delete f;
 }
+*/
+template <std::size_t W>
+void savehistlist(TList* list, int (&pdgs)[W])
+{ 
+
+  //Create new histlist if one already exists  
+  int pid = getpid();
+  
+  std::string filepath = "voxel_"+std::to_string(pid)+".root";
+  if (file_exists(filepath.c_str())){
+    TFile *f = new TFile(filepath.c_str(),"UPDATE");
+
+    for (int pdg : pdgs)
+    { 
+      ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
+    }
+    f->Close();
+  }
+
+  else {
+    TFile *f = new TFile(filepath.c_str(),"CREATE");
+     for (int pdg : pdgs)
+    {
+      ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
+    }
+    f->Close();
+  }
+  
+  list->Write("histlist", TObject::kSingleKey);
+}
+
+
+
+
+
 
 TList* openhistlist(std::string filepath)
 //Open and return an existing TList, just requries filepath
@@ -148,11 +182,11 @@ if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs)){
   hist->Fill(element[0],element[1],element[2],1.0);
 }
 
-else{
-  continue;
+else{continue;}
+
+
 }
-}
-savehistlist(list, histogramlistfilepath);
+savehistlist(list, pdgs);
 }
 
 

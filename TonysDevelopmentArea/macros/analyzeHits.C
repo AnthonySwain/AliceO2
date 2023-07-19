@@ -120,10 +120,11 @@ Accumulator analyse(TTree* tr, const char* brname)
         {
         TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(PDGnumb)).c_str());
         hist->Fill(hit.GetX(), hit.GetY(), hit.GetZ(), 1.0);
+        
         }
     }
   }
-
+  std::cout <<  "here" << std::endl;
   //Adds the list of hits for each particle type we care about in the detector to the saved file.
  
   TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
@@ -358,6 +359,7 @@ void analyzePHS(TTree* reftree)
 
 void analyzeFT0(TTree* reftree)
 {
+  std::cout <<"we get here!"<< std::endl;
   if (!reftree)
     return;
   auto refresult = analyse<o2::ft0::HitType, HitStats<o2::ft0::HitType>>(reftree, "FT0Hit");
@@ -488,7 +490,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
   //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD)); //Why doesn't this dude work:(
   analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS));
   analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV));
-  analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));
+  //analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));
   analyzeFV0(getHitTree(grp, filebase, o2::detectors::DetID::FV0));
   analyzeFDD(getHitTree(grp, filebase, o2::detectors::DetID::FDD));
   analyzeHMP(getHitTree(grp, filebase, o2::detectors::DetID::HMP));
