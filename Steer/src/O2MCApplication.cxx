@@ -40,6 +40,8 @@
 ////////////////////////////////////////////////
 //#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
 
+//#include <VecGeom/base/FlatVoxelHashMap.h> //Voxel hashmap
+
 #include <unistd.h>
 #include <TCanvas.h>
 #include <TFile.h>
@@ -138,6 +140,7 @@ void savehistlist(TList* list, int (&pdgs)[W])
   }
   
   list->Write("histlist", TObject::kSingleKey);
+ 
 }
 
 
@@ -151,6 +154,7 @@ TList* openhistlist(std::string filepath)
     TFile * file = new TFile(filepath.c_str(),"READ");
     TList* list;
     file->GetObject("histlist",list);
+    file->Close();
     return(list);
    
 
@@ -436,7 +440,7 @@ void O2MCApplicationBase::BeginEvent()
   ////////////////////////////////////////
 
   //Initialise vector for data of steps for the event 
-  std::vector<std::array<float,4>> data; 
+  //std::vector<std::array<float,4>> data; 
 
 
   ////////////////////////////////////////
