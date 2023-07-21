@@ -14,7 +14,7 @@ void CombineSteps(){
     file->GetObject("Allsteps",list);
     TH3I* hist;
 
-    TH3I* combinedSteps = new TH3I("CombinedHistList", "AllParticleSteps",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+    TH3I* combinedSteps = new TH3I("CombinedHistList", "AllParticleSteps",1000,-1000,1000,1000,-1000,1000,3000,-3000,3000);
     
     int pdgs[8] = {11,13,-11,-13,22,111,211,-211};
     

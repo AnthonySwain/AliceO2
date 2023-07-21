@@ -65,7 +65,7 @@ TList* createhistlist(int (&pdgs)[8])
     for (int i : pdgs){
         std::string name1 = std::to_string(i);
         std::string name2 = "Histogram"+std::to_string(i);
-        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,100,-3000,3000);
+        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),1000,-1000,1000,1000,-1000,1000,3000,-3000,3000);
         list -> Add(h1);
     }
    return (list);

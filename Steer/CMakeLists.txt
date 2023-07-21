@@ -19,6 +19,7 @@ o2_add_library(Steer
                                              O2::SimulationDataFormat
                                              O2::DetectorsCommonDataFormats
                                              O2::Generators O2::SimConfig)
+                                             #VecGeom::vecgeom)
 
 o2_add_executable(colcontexttool
                   COMPONENT_NAME steer
