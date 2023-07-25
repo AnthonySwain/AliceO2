@@ -1,7 +1,7 @@
 //Combines all the stepping root files
 #include <filesystem>
 
-TList* openhistlist(std::string filepath)
+TList* openhistlist2(std::string filepath)
 {
     TFile * file = new TFile(filepath.c_str(),"READ");
     TList* list;
@@ -9,7 +9,7 @@ TList* openhistlist(std::string filepath)
     return(list);
 }
 
-int numDigits(int number)
+int numDigits2(int number)
 {
     int digits = 1;
 
@@ -20,7 +20,7 @@ int numDigits(int number)
     return digits;
     }
 
-TList* createhistlist(int (&pdgs)[8])
+TList* createhistlist2(int (&pdgs)[8])
 //Creates and returns a list of histograms for each particle that is wanted to be investigated
 // Input is a int array of PDGid of particles.
 {   
@@ -29,14 +29,14 @@ TList* createhistlist(int (&pdgs)[8])
     for (int i : pdgs){
         std::string name1 = std::to_string(i);
         std::string name2 = "Histogram"+std::to_string(i);
-        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),1000,-1000,1000,1000,-1000,1000,3000,-3000,3000);
+        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,100,-3000,3000);
         list -> Add(h1);
     }
    return (list);
 }
 
 
-void savehistlist(TList* list, std::string filepath)
+void savehistlist2(TList* list, std::string filepath)
 { 
   //Create new histlist if one already exists 
   filepath += ".root";
@@ -45,7 +45,7 @@ void savehistlist(TList* list, std::string filepath)
   delete f;
 }
 
-bool file_exists(const std::string &filename) {
+bool file_exists3(const std::string &filename) {
   return std::filesystem::exists(filename);
 }
 
@@ -54,7 +54,7 @@ void analyzeSteps(){
     //Combines all the stepping root files
     int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //Definitely need a way of synchronising this across files
 
-    TList* empty = createhistlist(pdgs);
+    TList* empty = createhistlist2(pdgs);
 
 
     int i =0;
@@ -62,7 +62,7 @@ void analyzeSteps(){
 
     //THIS IS SO BAD ITS HILARIOUS 6 WORKER NODES!! 
     while(j<6){
-        if (file_exists("voxel_"+std::to_string(i)+".root")){
+        if (file_exists3("voxel_"+std::to_string(i)+".root")){
             j +=1;
             //std::cout<<j<<std::endl;
             TFile *f = new TFile(("voxel_"+std::to_string(i)+".root").c_str(),"READ");

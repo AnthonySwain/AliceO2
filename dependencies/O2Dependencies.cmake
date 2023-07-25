@@ -150,8 +150,6 @@ find_package(DebugGUI CONFIG)
 set_package_properties(DebugGUI PROPERTIES TYPE RECOMMENDED)
 
 
-#find_package(VecGeom)
-#set_package_properties(VecGeom PROPERTIES TYPE REQUIRED)
 
 
 find_package(AliRoot)
@@ -177,5 +175,9 @@ find_package(FastJet)
 
 find_package(FFTW3f CONFIG)
 set_package_properties(FFTW3f PROPERTIES TYPE REQUIRED)
+
+
+find_package(VecGeom)
+set_package_properties(VecGeom PROPERTIES TYPE REQUIRED)
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)

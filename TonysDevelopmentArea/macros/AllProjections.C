@@ -182,7 +182,7 @@ TList* openhistlist(std::string filepath)
 }
 
 
-bool file_exists(const std::string &filename) {
+bool file_exists2(const std::string &filename) {
   return std::filesystem::exists(filename);
 }
 
@@ -255,7 +255,7 @@ void AllProjections(){
 
 
     // Hits Over Steps Projections
-    TH3F* HitsDividedSteps = new TH3F("Hits/Steps", "Hits/Steps",1000,-1000,1000,1000,-1000,1000,3000,-3000,3000);
+    TH3F* HitsDividedSteps = new TH3F("Hits/Steps", "Hits/Steps",100,-1000,1000,100,-1000,1000,100,-3000,3000);
 
     int HitBinsX = histHits->GetNbinsX();
     int HitBinsY = histHits->GetNbinsY();

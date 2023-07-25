@@ -40,8 +40,8 @@
 ////////////////////////////////////////////////
 //#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
 
-//#include <VecGeom/base/FlatVoxelHashMap.h> //Voxel hashmap
-
+#include <VecGeom/base/FlatVoxelHashMap.h> //Voxel hashmap
+#include <iostream>
 #include <unistd.h>
 #include <TCanvas.h>
 #include <TFile.h>
@@ -52,6 +52,7 @@
 #include <TObject.h>
 #include <TList.h>
 #include <filesystem>
+#include <random>
 
 namespace TonysDevelopmentArea{
 
@@ -60,7 +61,6 @@ bool file_exists(const std::string &filename) {
   //Input is the filepath of said file. 
   return std::filesystem::exists(filename);
 }
-
 
 TList* createhistlist(int (&pdgs)[8])
 //Creates and returns a list of histograms for each particle that is wanted to be investigated
@@ -88,30 +88,6 @@ int numDigits(int number)
     return digits;
     }
 
-
-/*
-void savehistlist(TList* list, std::string filepath)
-{ 
-
-  //Create new histlist if one already exists 
-  int i = 0; 
-  while (file_exists(filepath+".root")){
-    int digits = numDigits(i);
-    //std::cout << digits << std::endl;
-    for (int j=0; j<digits; j++){
-    filepath.pop_back();
-    }
-    i += 1; 
-    filepath += std::to_string(i);
-    
-
-  }
-  filepath += ".root";
-  TFile *f = new TFile(filepath.c_str(),"RECREATE");
-  list->Write("histlist", TObject::kSingleKey);
-  delete f;
-}
-*/
 template <std::size_t W>
 void savehistlist(TList* list, int (&pdgs)[W])
 { 
@@ -125,6 +101,7 @@ void savehistlist(TList* list, int (&pdgs)[W])
 
     for (int pdg : pdgs)
     { 
+      //Should add to the histogram rather than save another one
       ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
     }
     f->Close();
@@ -142,11 +119,6 @@ void savehistlist(TList* list, int (&pdgs)[W])
   list->Write("histlist", TObject::kSingleKey);
  
 }
-
-
-
-
-
 
 TList* openhistlist(std::string filepath)
 //Open and return an existing TList, just requries filepath
@@ -219,9 +191,80 @@ void TypedVectorAttach(const char* name, fair::mq::Channel& channel, fair::mq::P
   }
 }
 
+
+O2MCApplication::O2MCApplication() //Constructor
+{ 
+  //Creating the voxel hashmap
+  /*
+  vecgeom::Vector3D<float> MinValues = (-1000,-1000,-3000);
+  vecgeom::Vector3D<float> Lengths = (10,10,10);
+  int NumbBins[3] = {100,100,300}; 
+
+
+  //vecgeom::FlatVoxelHashMap<bool,true> VoxelMap(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
+  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
+
+  //Assigns some random voxels as true. 
+  RandomAllocationCenter(200);
+  */
+
+ }
+
+
+bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
+  vecgeom::Vector3D<float> pos = (0.0, 0.0, 0.0);
+  auto key = VoxelMap->getVoxelKey(pos);
+  if ((VoxelMap)->isOccupied(key)){
+    return(true);
+  }
+
+  return(false);
+}
+
+float UniformRandom(float upper_bound, float lower_bound){
+  std::random_device rd;
+
+  // Use the Mersenne Twister algorithm for random number generation
+  std::mt19937 mt(rd());
+
+  // Create a uniform distribution for integers within the range
+  std::uniform_real_distribution<float> dist(lower_bound, upper_bound);
+
+  float random_number = dist(mt);
+
+  return(random_number);
+}
+
+void O2MCApplicationBase::RandomAllocationCenter(int N, float Min, float Max){
+  //Assign N random voxels near the center as true (i.e blachholes )
+  for (int i =0; i < N; i++){
+  float x = UniformRandom(Min,Max);
+  float y = UniformRandom(Min,Max);
+  float z = UniformRandom(Min,Max);
+
+  AssignVoxelTrue(x,y,z);
+  }
+}
+
+
+void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
+  vecgeom::Vector3D<float> pos = (x, y, z);
+  auto key = (VoxelMap)->getVoxelKey(pos);
+
+  //If its already been set to true, don't touch:) 
+  if (VoxelCheck(x,y,z)){}
+  
+  else{VoxelMap->addPropertyForKey(key, true);}
+  
+
+}
+
+
 void O2MCApplicationBase::Stepping()
 {
   mStepCounter++;
+
+
 
 /////////////////////////////////////////////////////////
 
@@ -229,13 +272,22 @@ void O2MCApplicationBase::Stepping()
   float xstep,ystep,zstep;
   fMC->TrackPosition(xstep,ystep,zstep);
 
+  //If the voxel contains True, delete the particle! 
+  if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
+    fMC->StopTrack();
+    std::cout<<"Deleted!"<<std::endl;
+    return;
+  }
+;
+
+  
+
   //PDG number of the particle
   auto pdg = fMC->TrackPid();
 
   //Get which volume the paeticle is in
   auto VolName = fMC->CurrentVolName();
   auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
-  //std::cout << VolName << std::endl; //Can assign it to a detector though...
 
   //Append the data of the step to the data vector
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
@@ -403,10 +455,7 @@ void O2MCApplicationBase::finishEventCommon()
   header->getMCEventStats().setNSteps(mStepCounter);
 
   static_cast<o2::data::Stack*>(GetStack())->updateEventStats();
-  //Putting my code here causes a crash....... need to work out what is wrong with the code... 
-  //I assume it is something with O2MCApplicationBase::Data that is messing everything up as I'm not quite sure if it can be handled in teh way im handling it
-
-}
+  }
 
 void O2MCApplicationBase::FinishEvent()
 {

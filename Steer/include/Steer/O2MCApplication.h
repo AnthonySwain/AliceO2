@@ -25,7 +25,7 @@
 
 ////////////////////////////////
 //#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
-
+#include <VecGeom/base/FlatVoxelHashMap.h> 
 
 ///////////////////////////////
 
@@ -43,14 +43,18 @@ class O2MCApplication : public O2MCApplicationBase
 {
  public:
   using O2MCApplicationBase::O2MCApplicationBase;
+  O2MCApplication();
   ~O2MCApplication() override = default;
 
-
+  
 
   // triggers data sending/io
   void SendData();
 
   void initLate();
+
+
+
 
   /** Define actions at the end of event */
   void FinishEvent() override
@@ -105,7 +109,15 @@ class O2MCApplication : public O2MCApplicationBase
   o2::data::SubEventInfo* mSubEventInfo = nullptr;     //! what are we currently processing?
   std::vector<o2::base::Detector*> mActiveO2Detectors; //! active (data taking) o2 detectors
 
+
   ClassDefOverride(O2MCApplication, 1); //Interface to MonteCarlo application
+
+
+
+  /*private:
+  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;//(vecgeom::Vector3D<float> const& lower,vecgeom::Vector3D<float> const& length,int Nx,int Ny,int Nz); //VoxelHashMap definition
+  */
+
 };
 
 } // end namespace steer

@@ -23,6 +23,7 @@
 #include "Rtypes.h" // for Int_t, Bool_t, Double_t, etc
 #include <TVirtualMC.h>
 #include "SimConfig/SimParams.h"
+#include <VecGeom/base/FlatVoxelHashMap.h> 
 
 namespace o2
 {
@@ -35,15 +36,23 @@ namespace steer
 class O2MCApplicationBase : public FairMCApplication
 {
   //////////////////////////////////////////
-
+  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;
   std::vector<std::array<float,4>> data;
-
   /////////////////////////////////
  public:
-  O2MCApplicationBase() : FairMCApplication(), mCutParams(o2::conf::SimCutParams::Instance()) { initTrackRefHook(); }
+  O2MCApplicationBase() : FairMCApplication(), mCutParams(o2::conf::SimCutParams::Instance()) {initTrackRefHook();}
+
   O2MCApplicationBase(const char* name, const char* title, TObjArray* ModList, const char* MatName) : FairMCApplication(name, title, ModList, MatName), mCutParams(o2::conf::SimCutParams::Instance())
   {
-    initTrackRefHook();
+
+  vecgeom::Vector3D<float> MinValues = (-1000,-1000,-3000);
+  vecgeom::Vector3D<float> Lengths = (1,1,1);
+  int NumbBins[3] = {2000,2000,6000}; 
+  VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
+
+  AssignVoxelTrue(0.0,0.0,0.0);  
+  initTrackRefHook();   
+
   }
 
   ~O2MCApplicationBase() override = default;
@@ -56,7 +65,13 @@ class O2MCApplicationBase : public FairMCApplication
   void InitGeometry() override;
   bool MisalignGeometry() override;
   void AddParticles() override;
-  
+
+  /////////////////////////////////////////////
+  bool VoxelCheck(float x, float y, float z);
+  void AssignVoxelTrue(float x, float y, float z);
+  void RandomAllocationCenter(int n, float Min, float Max);
+  /////////////////////////////////////////////
+
   // specific implementation of our hard geometry limits
   double TrackingRmax() const override { return mCutParams.maxRTracking; }
   double TrackingZmax() const override { return mCutParams.maxAbsZTracking; }
@@ -77,6 +92,11 @@ class O2MCApplicationBase : public FairMCApplication
   void initTrackRefHook();
 
   ClassDefOverride(O2MCApplicationBase, 1);
+
+
+  //private:
+  //std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;//(vecgeom::Vector3D<float> const& lower,vecgeom::Vector3D<float> const& length,int Nx,int Ny,int Nz); //VoxelHashMap definition
+
 };
 
 } // end namespace steer

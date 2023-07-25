@@ -9,7 +9,7 @@ void CombineDetectorHits(){
     TList* list;
     TH3I* hist;
 
-    TH3I* combinedHits = new TH3I("CombinedHistList", "AllParticleHits",1000,-1000,1000,1000,-1000,1000,3000,-3000,3000);
+    TH3I* combinedHits = new TH3I("CombinedHistList", "AllParticleHits",100,-1000,1000,100,-1000,1000,100,-3000,3000);
     const char* detectors[12] = {"ITSHit","MFTHit","TOFHit","EMCHit","PHSHit","CPVHit",
     "FV0Hit","FDDHit","HMPHit", "MCHHit", "MIDHit", "ZDCHit"};
     
