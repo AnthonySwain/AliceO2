@@ -126,6 +126,136 @@ void HitStepGraph(TH3I* HitHist, TH3I* StepHist, TH3F* HitOverStepHist){
     c1->Close();
 }
 
+void CountStepsZYplane(TH3I* histogram, int Xval){
+    //Counts the number of steps either side of a wall, made for debugging
+    std::cout << "Before Cuts: " << histogram->GetEntries() << std::endl;
+    //perform some kind of cut
+
+    //Left side of the wall
+    int entries = histogram->GetEntries();
+    std::cout << histogram->GetEntries() << std::endl;
+
+    unsigned long long int entriesAboveThreshold = 0;
+
+    for (int xBin = 1; xBin <= histogram->GetNbinsX(); ++xBin) {
+        for (int yBin = 1; yBin <= histogram->GetNbinsY(); ++yBin) {
+            for (int zBin = 1; zBin <= histogram->GetNbinsZ(); ++zBin) {
+                double xValue = histogram->GetXaxis()->GetBinCenter(xBin);
+                double yValue = histogram->GetYaxis()->GetBinCenter(yBin);
+                double zValue = histogram->GetZaxis()->GetBinCenter(zBin);
+
+                if (xValue > Xval) {
+                    entriesAboveThreshold += histogram->GetBinContent(xBin, yBin, zBin);
+                }
+            }
+        }
+    }
+    unsigned long long int entriesBelowThreshold =0;
+    // Loop through the histogram bins
+    for (int xBin = 1; xBin <= histogram->GetNbinsX(); ++xBin) {
+        for (int yBin = 1; yBin <= histogram->GetNbinsY(); ++yBin) {
+            for (int zBin = 1; zBin <= histogram->GetNbinsZ(); ++zBin) {
+                double xValue = histogram->GetXaxis()->GetBinCenter(xBin);
+                double yValue = histogram->GetYaxis()->GetBinCenter(yBin);
+                double zValue = histogram->GetZaxis()->GetBinCenter(zBin);
+                //std::cout << xValue << std::endl;
+                if (xValue < Xval) {
+                    entriesBelowThreshold += histogram->GetBinContent(xBin, yBin, zBin);
+                }
+            }
+        }
+    }
+
+    std::cout << "Entries to the right of X = " << Xval << " = " << entriesAboveThreshold << std::endl;
+
+    std::cout << "Entries to the left of X = -" << Xval << " = " << entriesBelowThreshold << std::endl;
+}
+
+void removeCenterBins(TH3I* hist, int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
+    for (int i = xMin; i <= xMax; ++i) {
+        for (int j = yMin; j <= yMax; ++j) {
+            for (int k = zMin; k <= zMax; ++k) {
+                hist->SetBinContent(i, j, k, 0); // Set the bin content to zero
+            }
+        }
+    }
+}
+
+
+void ProjectionHistogramExcludeBeamPipe(string projectionaxis, TH3I* hist, string savename){
+    //debugging purposes
+  /*projection axis is the axis you want to take the projection of, eg xy
+    hist is the 3D histogram*/
+
+    
+
+    int xMin = -100;
+    int xMax = 100;
+    int yMin = -100;
+    int yMax = 100;
+    int zMin = -100;
+    int zMax = 100;
+
+    int binXMin = hist->GetXaxis()->FindBin(xMin);
+    int binXMax = hist->GetXaxis()->FindBin(xMax);
+    int binYMin = hist->GetYaxis()->FindBin(yMin);
+    int binYMax = hist->GetYaxis()->FindBin(yMax);
+    int binZMin = hist->GetZaxis()->FindBin(zMin);
+    int binZMax = hist->GetZaxis()->FindBin(zMax);
+    
+    for (int i = binXMin; i <= binXMax; ++i) {
+        for (int j = binYMin; j <= binYMax; ++j) {
+            for (int k = binZMin; k <= binZMax; ++k) {
+                hist->SetBinContent(i, j, k, 0); // Set the bin content to zero
+            }
+        }
+    }
+
+
+    TCanvas *c3 = new TCanvas("c3");
+    TH1* projection = nullptr;
+    projection = hist->Project3D(projectionaxis.c_str());
+    projection -> SetStats(0);
+    projection->SetContour(1000);
+    
+
+    char xtitle;
+    char ytitle;
+
+    //Not the best work-around but ah well - it works;) 
+    if (projectionaxis == "yx"){
+        projection ->GetXaxis()->SetTitle("x");
+        projection ->GetYaxis()->SetTitle("y");
+    }
+
+    if (projectionaxis == "zx"){
+        projection ->GetXaxis()->SetTitle("x");
+        projection ->GetYaxis()->SetTitle("z");
+    }
+
+    if (projectionaxis == "zy"){
+        projection ->GetXaxis()->SetTitle("y");
+        projection ->GetYaxis()->SetTitle("z");
+    }
+    projection->GetXaxis()->SetTitleOffset(0.9);
+    projection->GetYaxis()->SetTitleOffset(1.2);
+    projection->GetZaxis()->SetTitleOffset(1.4);
+    projection ->GetZaxis()->SetTitle("count");
+    projection ->Draw("colz");
+
+    c3->SetRightMargin(0.20);
+    c3->SetLeftMargin(0.10);
+    c3->SetBottomMargin(0.10);
+    
+
+    //Create directory to save and saving the plots
+    std::filesystem::create_directories("./AllParticlesListed");
+    string name = "./AllParticlesListed/" + projectionaxis + savename +"ExcludedCenter.pdf";
+    c3->Print(name.c_str());
+    c3->Close();
+}
+
+
 void ProjectionHistogram(string projectionaxis, TH3I* hist, string savename){
 
   /*projection axis is the axis you want to take the projection of, eg xy
@@ -134,7 +264,7 @@ void ProjectionHistogram(string projectionaxis, TH3I* hist, string savename){
     TCanvas *c3 = new TCanvas("c3");
     TH1* projection = nullptr;
     projection = hist->Project3D(projectionaxis.c_str());
-    //projection -> SetStats(0);
+    projection -> SetStats(0);
     projection->SetContour(1000);
 
     char xtitle;
@@ -287,7 +417,7 @@ void AllProjections(){
     TCanvas *c2 = new TCanvas("c2");
     string name2 = "./AllParticlesListed/3DSteps.pdf";
     histSteps->Draw("");
-    histSteps->SetStats(1);
+    //histSteps->SetStats(1);
     histSteps->GetXaxis()->SetTitleOffset(1.8);
     histSteps->GetYaxis()->SetTitleOffset(1.8);
     histSteps->GetZaxis()->SetTitleOffset(1.5);
@@ -359,6 +489,13 @@ void AllProjections(){
     
     HitStepGraph(histHits,histSteps,HitsDividedSteps);
     HitStepGraphRadial(histHits,histSteps,HitsDividedSteps);
+
+    CountStepsZYplane(histSteps, 100);
+
+
+    ProjectionHistogramExcludeBeamPipe("yx",histSteps,"ProjectionHitsOverSteps");
+    ProjectionHistogramExcludeBeamPipe("zx",histSteps,"ProjectionHitsOverSteps");
+    ProjectionHistogramExcludeBeamPipe("zy",histSteps,"ProjectionHitsOverSteps");
     }
 
 

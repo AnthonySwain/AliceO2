@@ -103,7 +103,13 @@ void savehistlist(TList* list, int (&pdgs)[W])
     for (int pdg : pdgs)
     { 
       //Should add to the histogram rather than save another one
-      ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
+      //((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
+
+      //Then lets make it add
+      
+      TH3I* histogram = (TH3I*)f->Get((std::to_string(pdg)).c_str());
+      histogram->Add((TH3I*)list->FindObject((std::to_string(pdg)).c_str()));
+      histogram->Write((std::to_string(pdg)).c_str(),TObject::kOverwrite);
     }
     f->Close();
     delete f;
@@ -138,7 +144,7 @@ TList* openhistlist(std::string filepath)
 }
 
 
-void AddToHistogram(std::string histogramlistfilepath, std::vector<std::array<float,4>> data)
+void AddToHistogram(std::string histogramlistfilepath, std::vector<std::array<float,4>> SteppingData)
 {
 /*  histogramlistfilepath - where to save or find the TList root file of the histograms 
     std::vector<std::array<float,4>>  data - {x,y,z,PDGid}
@@ -151,7 +157,7 @@ int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model.
 TList *list = createhistlist(pdgs);
   
 //Filling the histograms with data
-for (auto &element : data)
+for (auto &element : SteppingData)
 {
 auto pdg = element[3];
 int pdgnumb = static_cast<int>(pdg);
@@ -200,7 +206,7 @@ void TypedVectorAttach(const char* name, fair::mq::Channel& channel, fair::mq::P
 
 O2MCApplication::O2MCApplication() //Constructor
 {
-  std::vector<std::array<float,4>> data; 
+  //std::vector<std::array<float,4>> data; 
   
 }
 
@@ -210,11 +216,10 @@ vecgeom::Vector3D<float> O2MCApplicationBase::FindVoxelCenter(float x,float y, f
   return (VoxelMap->keyToPos(key));   
 }
 
-
 bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
-  auto key = VoxelMap->getVoxelKey(pos);
-  if ((VoxelMap)->isOccupied(key)){
+  //auto key = VoxelMap->getVoxelKey(pos);
+  if ((VoxelMap)->isOccupied(pos)){
     std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
     return(true);
   }
@@ -249,20 +254,54 @@ void O2MCApplicationBase::RandomAllocation(int N, float Min, float Max){
 
 void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
-  auto key = (VoxelMap)->getVoxelKey(pos);
+  //auto key = (VoxelMap)->getVoxelKey(pos);
 
   //If its already been set to true, don't touch:) 
   if (VoxelCheck(x,y,z)){}
   
   else{
-  VoxelMap->addPropertyForKey(key, true);
+  VoxelMap->addProperty(pos, true);
   std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
   }}
+
+void O2MCApplicationBase::BuildWallZYplane(float Xval, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
+  float deltaY = (Ymax - Ymin)/YBins;
+  float deltaZ = (Zmax - Zmin)/ZBins;
+
+  for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
+    for (float i = (float(Zmin) + deltaZ/2); i < float(Zmax); i += deltaZ ){
+      AssignVoxelTrue(Xval, j , i);
+  }
+  }
+}
+
+void O2MCApplicationBase::BuildWallXYplane(float Zval, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins){
+  float deltaY = (Ymax - Ymin)/YBins;
+  float deltaX = (Xmax - Xmin)/XBins;
+
+  for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
+    for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
+      AssignVoxelTrue(i, j , Zval);
+  }
+  }
+}
+
+void O2MCApplicationBase::BuildWallXZplane(float Yval, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins){
+  float deltaZ = (Zmax - Zmin)/ZBins;
+  float deltaX = (Xmax - Xmin)/XBins;
+
+  for (float j = (float(Zmin) + deltaZ/2); j < float(Zmax); j += deltaZ ){
+    for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
+      AssignVoxelTrue(i, Yval , j);
+  }
+  }
+}
+
 
 void O2MCApplicationBase::Stepping()
 {
   mStepCounter++;
-/////////////////////////////////////////////////////////
+
 
   //Get x,y,z locations
   float xstep,ystep,zstep;
@@ -281,19 +320,16 @@ void O2MCApplicationBase::Stepping()
   if (i==1){
     std::cout << "Particle has been deleted but code is continuing" << std::endl;
   }
-  // std::cout<<"Not Deleted!"<<std::endl;
+  //std::cout<<"Not Deleted!"<<std::endl;
 
   //PDG number of the particle
   auto pdg = fMC->TrackPid();
 
   //Get which volume the particle is in
-  auto VolName = fMC->CurrentVolName();
-  auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
+  //auto VolName = fMC->CurrentVolName();
+  //auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
 
-  //Append the data of the step to the data vector
-  std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
-  O2MCApplicationBase::data.push_back(datapoint); //Needs to be something that can be called
-/////////////////////////////////////////////////////////
+ 
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();
   auto& params = o2::GlobalProcessCutSimParam::Instance();
@@ -335,7 +371,10 @@ void O2MCApplicationBase::Stepping()
   if (mCutParams.stepTrackRefHook) {
     mTrackRefFcn(fMC);
   }
-
+  //Append the data of the step to the data vector
+  std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
+  SteppingData.push_back(datapoint); //Push to vector containing all step data for this event.
+  /////////////////////////////////////////////////////////
   // dispatch now to stepping function in FairRoot
   FairMCApplication::Stepping();
 }
@@ -433,11 +472,11 @@ void O2MCApplicationBase::finishEventCommon()
 
 
   //Saves the Histogram for this event
-  TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
+  TonysDevelopmentArea::AddToHistogram("HistList0",SteppingData);
 
   //clears the data in the vector: data, for the next event.
-  std::cout << O2MCApplicationBase::data.max_size() << "/n Size: " <<  O2MCApplicationBase::data.size() << "/n Capacity: " << O2MCApplicationBase::data.capacity() << std::endl; 
-  O2MCApplicationBase::data.clear(); 
+  std::cout << SteppingData.max_size() << "/n Size: " <<  SteppingData.size() << "/n Capacity: " << SteppingData.capacity() << std::endl; 
+  SteppingData.clear(); 
 
   ////////////////////////////////////////////////////////////////////////////
 

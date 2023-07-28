@@ -60,7 +60,7 @@ void analyzeSteps(){
     int i =0;
     int j=0;
 
-    //I know the pid has at most 6 digits so just go through them all
+    //I know the pid has at most 7 digits so just go through them all
     for (int i =0; i < 10000000; i++){
         if (file_exists3("voxel_"+std::to_string(i)+".root")){
             
@@ -69,21 +69,22 @@ void analyzeSteps(){
             for (int pdg : pdgs)
             {      
                 std::cout<<("voxel_"+std::to_string(i)+".root").c_str()<<std::endl;
-                
+                 ((TH3I*)empty->FindObject((std::to_string(pdg)).c_str()))->Add(((TH3I*)f->Get((std::to_string(pdg)).c_str())));
+                /*
                 //Need to specify the cycle?
                 int no_cycles =  f->GetKey((std::to_string(pdg)).c_str())->GetCycle();
 
                 for (int k = 1; k<=no_cycles;k++){
 
                 ((TH3I*)empty->FindObject((std::to_string(pdg)).c_str()))->Add(((TH3I*)f->Get((std::to_string(pdg)).c_str())));
-                }
+                }*/
                 
             }
             f->Close();
 
         }
         else{continue;}
-        i+=1;
+     
         //std::cout<<i<<std::endl;
     }
 
