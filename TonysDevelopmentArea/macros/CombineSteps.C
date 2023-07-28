@@ -30,6 +30,7 @@ void CombineSteps(){
 
     TFile *f = new TFile("AllStepsCombined.root","RECREATE");
     combinedSteps->Write("AllStepsCombined", TObject::kSingleKey);
+    f->Close();
 
     
 }

@@ -126,16 +126,16 @@ void HitStepGraph(TH3I* HitHist, TH3I* StepHist, TH3F* HitOverStepHist){
     c1->Close();
 }
 
-template <typename T>
-void ProjectionHistogram(string projectionaxis, T hist, string savename){
+void ProjectionHistogram(string projectionaxis, TH3I* hist, string savename){
 
   /*projection axis is the axis you want to take the projection of, eg xy
     hist is the 3D histogram*/
 
     TCanvas *c3 = new TCanvas("c3");
-    TH1* projection = hist->Project3D(projectionaxis.c_str());
-    projection -> SetStats(0);
-
+    TH1* projection = nullptr;
+    projection = hist->Project3D(projectionaxis.c_str());
+    //projection -> SetStats(0);
+    projection->SetContour(1000);
 
     char xtitle;
     char ytitle;
@@ -182,6 +182,52 @@ TList* openhistlist(std::string filepath)
 }
 
 
+void ProjectionHistogram2(string projectionaxis, TH3F* hist, string savename){
+
+  /*projection axis is the axis you want to take the projection of, eg xy
+    hist is the 3D histogram*/
+
+    TCanvas *c3 = new TCanvas("c3");
+    TH1* projection = nullptr;
+    projection = hist->Project3D(projectionaxis.c_str());
+    projection -> SetStats(0);
+
+    //Not the best work-around but ah well - it works;) 
+    if (projectionaxis == "yx"){
+        projection ->GetXaxis()->SetTitle("x");
+        projection ->GetYaxis()->SetTitle("y");
+    }
+
+    if (projectionaxis == "zx"){
+        projection ->GetXaxis()->SetTitle("x");
+        projection ->GetYaxis()->SetTitle("z");
+    }
+
+    if (projectionaxis == "zy"){
+        projection ->GetXaxis()->SetTitle("y");
+        projection ->GetYaxis()->SetTitle("z");
+    }
+    projection->GetXaxis()->SetTitleOffset(0.9);
+    projection->GetYaxis()->SetTitleOffset(1.2);
+    projection->GetZaxis()->SetTitleOffset(1.4);
+    projection->SetContour(1000);
+    projection ->GetZaxis()->SetTitle("count");
+    projection ->Draw("colz");
+
+
+    c3->SetRightMargin(0.20);
+    c3->SetLeftMargin(0.10);
+    c3->SetBottomMargin(0.10);
+    
+
+    //Create directory to save and saving the plots
+    std::filesystem::create_directories("./AllParticlesListed");
+    string name = "./AllParticlesListed/" + projectionaxis + savename +".pdf";
+    c3->Print(name.c_str());
+    c3->Close();
+}
+
+
 bool file_exists2(const std::string &filename) {
   return std::filesystem::exists(filename);
 }
@@ -191,21 +237,16 @@ void AllProjections(){
     //Opening HitsHistogram
     string filepathHits = "AllHits.root";
     TFile* fileHits = new TFile(filepathHits.c_str(),"READ");
-    TH3I* histHits;
+    TH3I* histHits = nullptr;
     fileHits->GetObject("AllHits",histHits);
-    
-    //Opening StepsHistogram
-    string filepathSteps = "AllStepsCombined.root";
-    TFile* fileSteps = new TFile(filepathSteps.c_str(),"READ");
-    TH3I* histSteps;
-    histSteps = ((TH3I*)fileSteps->Get("AllStepsCombined"));
-
+    //fileHits->Close();
+  
     //Hits Histogram Projections
     histHits->GetXaxis()->SetTitle("x");
     histHits->GetYaxis()->SetTitle("y");
     histHits->GetZaxis()->SetTitle("z");
     histHits->SetTitle("Hits in ALICE particle detector");
-    histHits->SetContour(100);
+    histHits->SetContour(1000);
     
     TCanvas *c1 = new TCanvas("c1");
     histHits->Draw("BOX2");
@@ -226,19 +267,27 @@ void AllProjections(){
     ProjectionHistogram("yx",histHits,"ProjectionHits");
     ProjectionHistogram("zx",histHits,"ProjectionHits");
     ProjectionHistogram("zy",histHits,"ProjectionHits");
-    
+
+
+      //Opening StepsHistogram
+    string filepathSteps = "AllStepsCombined.root";
+    TFile* fileSteps = new TFile(filepathSteps.c_str(),"READ");
+    TH3I* histSteps = nullptr;
+    fileSteps->GetObject("AllStepsCombined",histSteps);
+    //fileSteps->Close();
+
 
     //Steps Histogram Projections
     histSteps->GetXaxis()->SetTitle("x");
     histSteps->GetYaxis()->SetTitle("y");
     histSteps->GetZaxis()->SetTitle("z");
     histSteps->SetTitle("Steps in ALICE particle detector");
-    histSteps->SetContour(100);
+    histSteps->SetContour(1000);
     
     TCanvas *c2 = new TCanvas("c2");
     string name2 = "./AllParticlesListed/3DSteps.pdf";
-    histSteps->Draw("BOX2");
-    histSteps->SetStats(0);
+    histSteps->Draw("");
+    histSteps->SetStats(1);
     histSteps->GetXaxis()->SetTitleOffset(1.8);
     histSteps->GetYaxis()->SetTitleOffset(1.8);
     histSteps->GetZaxis()->SetTitleOffset(1.5);
@@ -247,7 +296,7 @@ void AllProjections(){
     c2->SetBottomMargin(0.10);
     c2->Print(name2.c_str());
     c2->Close();
-
+    
     ProjectionHistogram("yx",histSteps,"ProjectionSteps");
     ProjectionHistogram("zx",histSteps,"ProjectionSteps");
     ProjectionHistogram("zy",histSteps,"ProjectionSteps");
@@ -289,7 +338,7 @@ void AllProjections(){
     HitsDividedSteps->GetYaxis()->SetTitle("y");
     HitsDividedSteps->GetZaxis()->SetTitle("z");
     HitsDividedSteps->SetTitle("Hits/Steps in ALICE particle detector");
-    HitsDividedSteps->SetContour(100);
+    HitsDividedSteps->SetContour(1000);
 
     TCanvas* c3 = new TCanvas("c3");
     HitsDividedSteps->SetStats(0);
@@ -304,9 +353,9 @@ void AllProjections(){
     c3 ->Print(name3.c_str());
     c3->Close();
 
-    ProjectionHistogram("yx",HitsDividedSteps,"ProjectionHitsOverSteps");
-    ProjectionHistogram("zx",HitsDividedSteps,"ProjectionHitsOverSteps");
-    ProjectionHistogram("zy",HitsDividedSteps,"ProjectionHitsOverSteps");
+    ProjectionHistogram2("yx",HitsDividedSteps,"ProjectionHitsOverSteps");
+    ProjectionHistogram2("zx",HitsDividedSteps,"ProjectionHitsOverSteps");
+    ProjectionHistogram2("zy",HitsDividedSteps,"ProjectionHitsOverSteps");
     
     HitStepGraph(histHits,histSteps,HitsDividedSteps);
     HitStepGraphRadial(histHits,histSteps,HitsDividedSteps);

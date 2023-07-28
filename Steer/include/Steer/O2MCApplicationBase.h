@@ -45,12 +45,45 @@ class O2MCApplicationBase : public FairMCApplication
   O2MCApplicationBase(const char* name, const char* title, TObjArray* ModList, const char* MatName) : FairMCApplication(name, title, ModList, MatName), mCutParams(o2::conf::SimCutParams::Instance())
   {
 
-  vecgeom::Vector3D<float> MinValues = (-1000,-1000,-3000);
-  vecgeom::Vector3D<float> Lengths = (1,1,1);
-  int NumbBins[3] = {2000,2000,6000}; 
+  vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
+  vecgeom::Vector3D<float> Lengths(2000,2000,6000); //Is this the lengths of individual voxels or the entire voxelmap?
+  int NumbBins[3] = {20,20,60}; 
   VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
+  std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
 
-  AssignVoxelTrue(0.0,0.0,0.0);  
+
+  vecgeom::Vector3D<float> lower;
+  vecgeom::Vector3D<float> upper;
+
+  VoxelMap->Extent((VoxelMap->getKey(0,0,0)),lower,upper);
+  std::cout << "Lower: " << lower << ", Upper: " << upper << std::endl;
+
+  /*
+  std::cout << "Initialising BlackHoles" << std::endl;
+  AssignVoxelTrue(49,39,0);
+  std::cout << FindVoxelCenter(49,39,0) << std::endl;
+  AssignVoxelTrue(49,49,0);
+  std::cout << FindVoxelCenter(49,49,0) << std::endl;
+  AssignVoxelTrue(49,59,0);
+  std::cout << FindVoxelCenter(49,59,0) << std::endl;
+
+  AssignVoxelTrue(39,39,0);
+  std::cout << FindVoxelCenter(39,39,0) << std::endl;
+  AssignVoxelTrue(39,49,0);
+  std::cout << FindVoxelCenter(39,49,0) << std::endl;
+  AssignVoxelTrue(39,59,0); 
+  std::cout << FindVoxelCenter(39,59,0) << std::endl;
+  */
+
+  AssignVoxelTrue(0,0,0);
+  std::cout << FindVoxelCenter(0,0,0) << std::endl;
+  /*
+  AssignVoxelTrue(59,39,0);
+  AssignVoxelTrue(59,49,0);
+  AssignVoxelTrue(59,59,0); 
+  std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
+  */
+  VoxelMap->print();
   initTrackRefHook();   
 
   }
@@ -69,7 +102,9 @@ class O2MCApplicationBase : public FairMCApplication
   /////////////////////////////////////////////
   bool VoxelCheck(float x, float y, float z);
   void AssignVoxelTrue(float x, float y, float z);
-  void RandomAllocationCenter(int n, float Min, float Max);
+  void RandomAllocation(int n, float Min, float Max);
+  vecgeom::Vector3D<float> FindVoxelCenter(float x,float y, float z);
+  void ReadHashMap();
   /////////////////////////////////////////////
 
   // specific implementation of our hard geometry limits

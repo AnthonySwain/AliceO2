@@ -96,27 +96,31 @@ void savehistlist(TList* list, int (&pdgs)[W])
   int pid = getpid();
   
   std::string filepath = "voxel_"+std::to_string(pid)+".root";
+
   if (file_exists(filepath.c_str())){
     TFile *f = new TFile(filepath.c_str(),"UPDATE");
-
+    std::cout<<"exists!"<<std::endl;
     for (int pdg : pdgs)
     { 
       //Should add to the histogram rather than save another one
       ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
     }
     f->Close();
+    delete f;
   }
 
   else {
     TFile *f = new TFile(filepath.c_str(),"CREATE");
+    std::cout<<"Doesn't exist!"<<std::endl;
      for (int pdg : pdgs)
     {
       ((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
     }
     f->Close();
+    delete f; 
   }
   
-  list->Write("histlist", TObject::kSingleKey);
+  //list->Write("histlist", TObject::kSingleKey);
  
 }
 
@@ -128,6 +132,7 @@ TList* openhistlist(std::string filepath)
     file->GetObject("histlist",list);
     file->Close();
     return(list);
+    delete file;
    
 
 }
@@ -158,11 +163,12 @@ if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs)){
   hist->Fill(element[0],element[1],element[2],1.0);
 }
 
-else{continue;}
+//else{continue;}
 
 
 }
 savehistlist(list, pdgs);
+delete list; 
 }
 
 
@@ -193,28 +199,23 @@ void TypedVectorAttach(const char* name, fair::mq::Channel& channel, fair::mq::P
 
 
 O2MCApplication::O2MCApplication() //Constructor
-{ 
-  //Creating the voxel hashmap
-  /*
-  vecgeom::Vector3D<float> MinValues = (-1000,-1000,-3000);
-  vecgeom::Vector3D<float> Lengths = (10,10,10);
-  int NumbBins[3] = {100,100,300}; 
+{
+  std::vector<std::array<float,4>> data; 
+  
+}
 
-
-  //vecgeom::FlatVoxelHashMap<bool,true> VoxelMap(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
-  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
-
-  //Assigns some random voxels as true. 
-  RandomAllocationCenter(200);
-  */
-
- }
+vecgeom::Vector3D<float> O2MCApplicationBase::FindVoxelCenter(float x,float y, float z){
+  vecgeom::Vector3D<float> pos(x, y, z);
+  auto key = VoxelMap->getVoxelKey(pos);
+  return (VoxelMap->keyToPos(key));   
+}
 
 
 bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
-  vecgeom::Vector3D<float> pos = (0.0, 0.0, 0.0);
+  vecgeom::Vector3D<float> pos(x, y, z);
   auto key = VoxelMap->getVoxelKey(pos);
   if ((VoxelMap)->isOccupied(key)){
+    std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
     return(true);
   }
 
@@ -235,7 +236,7 @@ float UniformRandom(float upper_bound, float lower_bound){
   return(random_number);
 }
 
-void O2MCApplicationBase::RandomAllocationCenter(int N, float Min, float Max){
+void O2MCApplicationBase::RandomAllocation(int N, float Min, float Max){
   //Assign N random voxels near the center as true (i.e blachholes )
   for (int i =0; i < N; i++){
   float x = UniformRandom(Min,Max);
@@ -246,26 +247,21 @@ void O2MCApplicationBase::RandomAllocationCenter(int N, float Min, float Max){
   }
 }
 
-
 void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
-  vecgeom::Vector3D<float> pos = (x, y, z);
+  vecgeom::Vector3D<float> pos(x, y, z);
   auto key = (VoxelMap)->getVoxelKey(pos);
 
   //If its already been set to true, don't touch:) 
   if (VoxelCheck(x,y,z)){}
   
-  else{VoxelMap->addPropertyForKey(key, true);}
-  
-
-}
-
+  else{
+  VoxelMap->addPropertyForKey(key, true);
+  std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
+  }}
 
 void O2MCApplicationBase::Stepping()
 {
   mStepCounter++;
-
-
-
 /////////////////////////////////////////////////////////
 
   //Get x,y,z locations
@@ -273,30 +269,31 @@ void O2MCApplicationBase::Stepping()
   fMC->TrackPosition(xstep,ystep,zstep);
 
   //If the voxel contains True, delete the particle! 
+  int i =0; 
+  
   if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
     fMC->StopTrack();
-    std::cout<<"Deleted!"<<std::endl;
+    std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+    i++;
     return;
   }
-;
 
-  
+  if (i==1){
+    std::cout << "Particle has been deleted but code is continuing" << std::endl;
+  }
+  // std::cout<<"Not Deleted!"<<std::endl;
 
   //PDG number of the particle
   auto pdg = fMC->TrackPid();
 
-  //Get which volume the paeticle is in
+  //Get which volume the particle is in
   auto VolName = fMC->CurrentVolName();
   auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
 
   //Append the data of the step to the data vector
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
   O2MCApplicationBase::data.push_back(datapoint); //Needs to be something that can be called
-
-
 /////////////////////////////////////////////////////////
-
-
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();
   auto& params = o2::GlobalProcessCutSimParam::Instance();
@@ -304,13 +301,7 @@ void O2MCApplicationBase::Stepping()
     fMC->StopTrack();
     return;
   }
-
   mLongestTrackTime = std::max((double)mLongestTrackTime, tof);
-
-
-  
-
-
   if (mCutParams.stepFiltering) {
     // we can kill tracks here based on our
     // custom detector specificities
@@ -444,7 +435,8 @@ void O2MCApplicationBase::finishEventCommon()
   //Saves the Histogram for this event
   TonysDevelopmentArea::AddToHistogram("HistList0",O2MCApplicationBase::data);
 
-  //clears the data in the vector: data, for the next event. 
+  //clears the data in the vector: data, for the next event.
+  std::cout << O2MCApplicationBase::data.max_size() << "/n Size: " <<  O2MCApplicationBase::data.size() << "/n Capacity: " << O2MCApplicationBase::data.capacity() << std::endl; 
   O2MCApplicationBase::data.clear(); 
 
   ////////////////////////////////////////////////////////////////////////////
@@ -489,7 +481,7 @@ void O2MCApplicationBase::BeginEvent()
   ////////////////////////////////////////
 
   //Initialise vector for data of steps for the event 
-  //std::vector<std::array<float,4>> data; 
+  
 
 
   ////////////////////////////////////////

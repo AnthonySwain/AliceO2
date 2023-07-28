@@ -60,10 +60,10 @@ void analyzeSteps(){
     int i =0;
     int j=0;
 
-    //THIS IS SO BAD ITS HILARIOUS 6 WORKER NODES!! 
-    while(j<6){
+    //I know the pid has at most 6 digits so just go through them all
+    for (int i =0; i < 10000000; i++){
         if (file_exists3("voxel_"+std::to_string(i)+".root")){
-            j +=1;
+            
             //std::cout<<j<<std::endl;
             TFile *f = new TFile(("voxel_"+std::to_string(i)+".root").c_str(),"READ");
             for (int pdg : pdgs)
@@ -82,6 +82,7 @@ void analyzeSteps(){
             f->Close();
 
         }
+        else{continue;}
         i+=1;
         //std::cout<<i<<std::endl;
     }
