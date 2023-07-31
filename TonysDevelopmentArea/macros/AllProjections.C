@@ -133,9 +133,10 @@ void CountStepsZYplane(TH3I* histogram, int Xval){
 
     //Left side of the wall
     int entries = histogram->GetEntries();
-    std::cout << histogram->GetEntries() << std::endl;
+    //std::cout << histogram->GetEntries() << std::endl;
 
     unsigned long long int entriesAboveThreshold = 0;
+    unsigned long long int entriesBelowThreshold = 0;
 
     for (int xBin = 1; xBin <= histogram->GetNbinsX(); ++xBin) {
         for (int yBin = 1; yBin <= histogram->GetNbinsY(); ++yBin) {
@@ -147,70 +148,42 @@ void CountStepsZYplane(TH3I* histogram, int Xval){
                 if (xValue > Xval) {
                     entriesAboveThreshold += histogram->GetBinContent(xBin, yBin, zBin);
                 }
-            }
-        }
-    }
-    unsigned long long int entriesBelowThreshold =0;
-    // Loop through the histogram bins
-    for (int xBin = 1; xBin <= histogram->GetNbinsX(); ++xBin) {
-        for (int yBin = 1; yBin <= histogram->GetNbinsY(); ++yBin) {
-            for (int zBin = 1; zBin <= histogram->GetNbinsZ(); ++zBin) {
-                double xValue = histogram->GetXaxis()->GetBinCenter(xBin);
-                double yValue = histogram->GetYaxis()->GetBinCenter(yBin);
-                double zValue = histogram->GetZaxis()->GetBinCenter(zBin);
-                //std::cout << xValue << std::endl;
-                if (xValue < Xval) {
+                if (xValue < -Xval) {
                     entriesBelowThreshold += histogram->GetBinContent(xBin, yBin, zBin);
                 }
             }
         }
     }
-
+  
     std::cout << "Entries to the right of X = " << Xval << " = " << entriesAboveThreshold << std::endl;
 
     std::cout << "Entries to the left of X = -" << Xval << " = " << entriesBelowThreshold << std::endl;
 }
 
-void removeCenterBins(TH3I* hist, int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
-    for (int i = xMin; i <= xMax; ++i) {
-        for (int j = yMin; j <= yMax; ++j) {
-            for (int k = zMin; k <= zMax; ++k) {
-                hist->SetBinContent(i, j, k, 0); // Set the bin content to zero
-            }
-        }
-    }
-}
-
-
-void ProjectionHistogramExcludeBeamPipe(string projectionaxis, TH3I* hist, string savename){
+void ProjectionHistogramExcludeBeamPipe(string projectionaxis, TH3I* hist, string savename,int xMin, int xMax, int yMin, int yMax, int zMin, int zMax){
     //debugging purposes
   /*projection axis is the axis you want to take the projection of, eg xy
     hist is the 3D histogram*/
-
     
+    /*
+    int binXMin = hist->GetXaxis()->FindFixBin(xMin);
+    int binXMax = hist->GetXaxis()->FindFixBin(xMax);
+    int binYMin = hist->GetYaxis()->FindFixBin(yMin);
+    int binYMax = hist->GetYaxis()->FindFixBin(yMax);
+    int binZMin = hist->GetZaxis()->FindFixBin(zMin);
+    int binZMax = hist->GetZaxis()->FindFixBin(zMax);
+    //hist->GetNbinsZ();
+    std::cout << binZMin << " <- min, max -> " << binZMax << std::endl;
 
-    int xMin = -100;
-    int xMax = 100;
-    int yMin = -100;
-    int yMax = 100;
-    int zMin = -100;
-    int zMax = 100;
-
-    int binXMin = hist->GetXaxis()->FindBin(xMin);
-    int binXMax = hist->GetXaxis()->FindBin(xMax);
-    int binYMin = hist->GetYaxis()->FindBin(yMin);
-    int binYMax = hist->GetYaxis()->FindBin(yMax);
-    int binZMin = hist->GetZaxis()->FindBin(zMin);
-    int binZMax = hist->GetZaxis()->FindBin(zMax);
-    
-    for (int i = binXMin; i <= binXMax; ++i) {
-        for (int j = binYMin; j <= binYMax; ++j) {
-            for (int k = binZMin; k <= binZMax; ++k) {
+    for (int i = binXMin; i <= binXMax; i++) {
+        for (int j = binYMin; j <= binYMax; j++) {
+            for (int k = binZMin; k <= binZMax; k++) {
                 hist->SetBinContent(i, j, k, 0); // Set the bin content to zero
+                std::cout << "i: " << i << ", j: " << j << ", k: " << k << std::endl;
             }
         }
     }
-
+*/
 
     TCanvas *c3 = new TCanvas("c3");
     TH1* projection = nullptr;
@@ -222,20 +195,58 @@ void ProjectionHistogramExcludeBeamPipe(string projectionaxis, TH3I* hist, strin
     char xtitle;
     char ytitle;
 
+    
+
     //Not the best work-around but ah well - it works;) 
     if (projectionaxis == "yx"){
         projection ->GetXaxis()->SetTitle("x");
         projection ->GetYaxis()->SetTitle("y");
+
+        int binXMin = hist->GetXaxis()->FindFixBin(xMin);
+        int binXMax = hist->GetXaxis()->FindFixBin(xMax);
+        int binYMin = hist->GetYaxis()->FindFixBin(yMin);
+        int binYMax = hist->GetYaxis()->FindFixBin(yMax);
+
+        for (int i = binXMin; i <= binXMax; i++) {
+            for (int j = binYMin; j <= binYMax; j++) {
+                 projection->SetBinContent(i, j, 0); // Set the bin content to zero
+            
+        }
+        }
     }
 
     if (projectionaxis == "zx"){
         projection ->GetXaxis()->SetTitle("x");
         projection ->GetYaxis()->SetTitle("z");
+        int binXMin = hist->GetXaxis()->FindFixBin(xMin);
+        int binXMax = hist->GetXaxis()->FindFixBin(xMax);
+        int binYMin = hist->GetYaxis()->FindFixBin(zMin);
+        int binYMax = hist->GetYaxis()->FindFixBin(zMax);
+
+        for (int i = binXMin; i <= binXMax; i++) {
+            for (int j = binYMin; j <= binYMax; j++) {
+                 projection->SetBinContent(i, j, 0); // Set the bin content to zero
+           
+        }
+        }
+
     }
 
     if (projectionaxis == "zy"){
         projection ->GetXaxis()->SetTitle("y");
         projection ->GetYaxis()->SetTitle("z");
+
+        int binXMin = hist->GetXaxis()->FindFixBin(xMin);
+        int binXMax = hist->GetXaxis()->FindFixBin(xMax);
+        int binYMin = hist->GetYaxis()->FindFixBin(zMin);
+        int binYMax = hist->GetYaxis()->FindFixBin(zMax);
+
+        for (int i = binXMin; i <= binXMax; i++) {
+            for (int j = binYMin; j <= binYMax; j++) {
+                 projection->SetBinContent(i, j, 0); // Set the bin content to zero
+           
+        }
+        }
     }
     projection->GetXaxis()->SetTitleOffset(0.9);
     projection->GetYaxis()->SetTitleOffset(1.2);
@@ -398,6 +409,10 @@ void AllProjections(){
     ProjectionHistogram("zx",histHits,"ProjectionHits");
     ProjectionHistogram("zy",histHits,"ProjectionHits");
 
+    ProjectionHistogramExcludeBeamPipe("yx",histHits,"ProjectionHits",-25,25,-25,25,-3000,3000);
+    ProjectionHistogramExcludeBeamPipe("zx",histHits,"ProjectionHits",-25,25,-25,25,-3000,3000);
+    ProjectionHistogramExcludeBeamPipe("zy",histHits,"ProjectionHits",-25,25,-25,25,-3000,3000);
+
 
       //Opening StepsHistogram
     string filepathSteps = "AllStepsCombined.root";
@@ -405,7 +420,6 @@ void AllProjections(){
     TH3I* histSteps = nullptr;
     fileSteps->GetObject("AllStepsCombined",histSteps);
     //fileSteps->Close();
-
 
     //Steps Histogram Projections
     histSteps->GetXaxis()->SetTitle("x");
@@ -431,6 +445,9 @@ void AllProjections(){
     ProjectionHistogram("zx",histSteps,"ProjectionSteps");
     ProjectionHistogram("zy",histSteps,"ProjectionSteps");
 
+    ProjectionHistogramExcludeBeamPipe("yx",histSteps,"ProjectionSteps",-25,25,-25,25,-3000,3000);
+    ProjectionHistogramExcludeBeamPipe("zx",histSteps,"ProjectionSteps",-25,25,-25,25,-3000,3000);
+    ProjectionHistogramExcludeBeamPipe("zy",histSteps,"ProjectionSteps",-25,25,-25,25,-3000,3000);
 
 
     // Hits Over Steps Projections
@@ -491,11 +508,13 @@ void AllProjections(){
     HitStepGraphRadial(histHits,histSteps,HitsDividedSteps);
 
     CountStepsZYplane(histSteps, 100);
+    CountStepsZYplane(histHits, 100);
 
 
-    ProjectionHistogramExcludeBeamPipe("yx",histSteps,"ProjectionHitsOverSteps");
-    ProjectionHistogramExcludeBeamPipe("zx",histSteps,"ProjectionHitsOverSteps");
-    ProjectionHistogramExcludeBeamPipe("zy",histSteps,"ProjectionHitsOverSteps");
+  
+
+
+    
     }
 
 

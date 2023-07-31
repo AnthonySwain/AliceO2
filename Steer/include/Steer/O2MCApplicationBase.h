@@ -48,46 +48,31 @@ class O2MCApplicationBase : public FairMCApplication
   vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
   vecgeom::Vector3D<float> Lengths(2000,2000,6000); //Is this the lengths of individual voxels or the entire voxelmap?
   int NumbBins[3] = {200,200,600}; 
+
+
+  //Read hashmap from file.
+  //VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile("HashMap1.root"));
+
+  
   VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
   std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
 
+  
+  BuildWallZYplane(100,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
+  /*
+  BuildWallZYplane(-230,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
 
-  vecgeom::Vector3D<float> lower;
-  vecgeom::Vector3D<float> upper;
-
-  VoxelMap->Extent((VoxelMap->getKey(0,0,0)),lower,upper);
-  std::cout << "Lower: " << lower << ", Upper: " << upper << std::endl;
-
-  std::cout << "Min Values Z = " <<MinValues[2] << std::endl;
-  BuildWallZYplane(100,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(110,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(120,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(130,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(140,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(150,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(160,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(170,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(180,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(190,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(200,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(210,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(220,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(230,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(240,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(250,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(260,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(270,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(280,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(290,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  BuildWallZYplane(300,MinValues[2], MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-
-  AssignVoxelTrue(0,0,0);
-  //std::cout << FindVoxelCenter(0,0,0) << std::endl;
-
-  std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
+  BuildWallXZplane(200,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
+  BuildWallXZplane(-230,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
+  */
+  //AssignVoxelTrue(0,0,0);
 
   VoxelMap->print();
+
+  //VoxelMap->dumpToTFile("HashMap1.root"); 
+  
   initTrackRefHook();   
+
 
   }
 
@@ -107,9 +92,9 @@ class O2MCApplicationBase : public FairMCApplication
   void AssignVoxelTrue(float x, float y, float z);
   void RandomAllocation(int n, float Min, float Max);
   vecgeom::Vector3D<float> FindVoxelCenter(float x,float y, float z);
-  void BuildWallZYplane(float Xval, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins);
-  void BuildWallXYplane(float Zval, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins);
-  void BuildWallXZplane(float Yval, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins);
+  void BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins);
+  void BuildWallXYplane(float Zval, int thickness, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins);
+  void BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins);
   void ReadHashMap();
   /////////////////////////////////////////////
 

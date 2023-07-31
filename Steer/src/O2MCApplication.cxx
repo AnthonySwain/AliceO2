@@ -264,36 +264,37 @@ void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
   std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
   }}
 
-void O2MCApplicationBase::BuildWallZYplane(float Xval, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
+void O2MCApplicationBase::BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
   float deltaY = (Ymax - Ymin)/YBins;
   float deltaZ = (Zmax - Zmin)/ZBins;
 
+  for (float k = 0; k < thickness ;k++){
   for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
     for (float i = (float(Zmin) + deltaZ/2); i < float(Zmax); i += deltaZ ){
-      AssignVoxelTrue(Xval, j , i);
-  }
-  }
-}
+      AssignVoxelTrue(Xval+k, j , i);
+  }}}}  
 
-void O2MCApplicationBase::BuildWallXYplane(float Zval, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins){
+void O2MCApplicationBase::BuildWallXYplane(float Zval, int thickness, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins){
   float deltaY = (Ymax - Ymin)/YBins;
   float deltaX = (Xmax - Xmin)/XBins;
 
+  for (float k = 0; k<thickness; k++){
   for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
     for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
-      AssignVoxelTrue(i, j , Zval);
-  }
+      AssignVoxelTrue(i, j , Zval+k);
+  }}
   }
 }
 
-void O2MCApplicationBase::BuildWallXZplane(float Yval, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins){
+void O2MCApplicationBase::BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins){
   float deltaZ = (Zmax - Zmin)/ZBins;
   float deltaX = (Xmax - Xmin)/XBins;
 
+  for (float k = 0; k<thickness; k++){
   for (float j = (float(Zmin) + deltaZ/2); j < float(Zmax); j += deltaZ ){
     for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
-      AssignVoxelTrue(i, Yval , j);
-  }
+      AssignVoxelTrue(i, Yval +k, j);
+  }}
   }
 }
 

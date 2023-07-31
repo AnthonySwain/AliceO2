@@ -28,9 +28,19 @@ void CombineDetectorHits(){
         }
     }
 
+    //TPC Detector
+
+    TH3I* TPCHist;
+    file->GetObject("TPC", TPCHist);
+    std::cout << "\n TPCHist entries" <<  TPCHist->GetEntries() << std::endl;
+    std::cout << "\n CombinedHist entries before" <<  combinedHits->GetEntries() << std::endl;
+    combinedHits->Add(TPCHist);
+    std::cout << "\n CombinedHist entries after" <<  combinedHits->GetEntries() << std::endl;
+    //file->Close();
+
     TFile *f = new TFile("AllHits.root","RECREATE");
     combinedHits->Write("AllHits", TObject::kSingleKey);
-
+    //f->Close();
     
 }
 

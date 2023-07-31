@@ -87,7 +87,7 @@ Accumulator analyse(TTree* tr, const char* brname)
   br->SetAddress(&hitvector);
   
   //Open o2sim_Kine.root
-  //Get the O2Sim tree -> MCTracks branch 
+  //Get the O2Sim tree -> MCTracks branch, get the trackID and find the PDGid from this. 
   TFile* o2sim_Kine = new TFile("o2sim_Kine.root");
   TTree *tree = (TTree*)o2sim_Kine->Get("o2sim");
   std::vector<o2::MCTrack>* MCTrack = nullptr;
@@ -282,6 +282,24 @@ struct TPCHitStats : public HitStatsBase {
 TPCHitStats analyseTPC(TTree* tr)
 {
   TPCHitStats prop;
+
+
+  //Unsure how to get PDGid from this, so I don't... 
+  /*
+  //Open o2sim_Kine.root
+  //Get the O2Sim tree -> MCTracks branch, get the trackID and find the PDGid from this. 
+  TFile* o2sim_Kine = new TFile("o2sim_Kine.root");
+  TTree *tree = (TTree*)o2sim_Kine->Get("o2sim");
+  std::vector<o2::MCTrack>* MCTrack = nullptr;
+  tree->SetBranchAddress("MCTrack",&MCTrack);
+
+  //Need way of getting PDG number of particles in detectors!! 
+  int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
+  TList* particleHistograms = createhistlist(pdgs);
+  Method for PDGid*/
+  TH3I* hist = new TH3I("TPCHits","TPCHits",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+  string brname = "TPC";
+
   for (int sector = 0; sector < 35; ++sector) {
     std::stringstream brnamestr;
     brnamestr << "TPCHitsShiftedSector" << sector;
@@ -293,13 +311,53 @@ TPCHitStats analyseTPC(TTree* tr)
     std::vector<o2::tpc::HitGroup>* hitvector = nullptr;
     br->SetAddress(&hitvector);
 
+   
+
     for (int i = 0; i < entries; ++i) {
       br->GetEntry(i);
+      /*
+      tree->GetEntry(i);
+      Method for PDGid*/
+
       for (auto& hit : *hitvector) {
         prop.addHit(hit);
+        for (int i=0; i < hit.getSize(); ++i){
+
+          auto ActualHit = hit.getHit(i);
+
+          /*
+          //Get PDG number of the particle 
+          Int_t trackID = ActualHit.GetTrackID();
+
+          o2::MCTrack thisTrack = (*MCTrack).at(trackID);
+          int PDGnumb = thisTrack.GetPdgCode();
+          
+
+          //Write to corresponding histogram of 
+          if (std::find(std::begin(pdgs), std::end(pdgs), PDGnumb) != std::end(pdgs))
+            {
+            TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(PDGnumb)).c_str());
+            hist->Fill(ActualHit.GetX(), ActualHit.GetY(), ActualHit.GetZ(), 1.0);
+            
+            }Method for PDGid*/
+          hist->Fill(ActualHit.GetX(), ActualHit.GetY(), ActualHit.GetZ(), 1.0);
+          
+        }
       }
     }
   }
+
+  //Adds the list of hits for each particle type we care about in the detector to the saved file.
+ 
+  TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
+
+  //particleHistograms->Write(brname.c_str(), TObject::kSingleKey);
+  hist->Write(brname.c_str(), TObject::kSingleKey);
+  delete f;
+  
+  /*
+  delete o2sim_Kine;
+  Method for PDGid*/
   prop.normalize();
   return prop;
 };
@@ -483,7 +541,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
 
   // should correspond to the same number as defined in DetID
   analyzeITS(getHitTree(grp, filebase, o2::detectors::DetID::ITS));
-  //analyzeTPC(getHitTree(grp, filebase, o2::detectors::DetID::TPC)); ////////This dude plays by different rules.
+  analyzeTPC(getHitTree(grp, filebase, o2::detectors::DetID::TPC)); ////////This dude plays by different rules.
   analyzeMFT(getHitTree(grp, filebase, o2::detectors::DetID::MFT));
   analyzeTOF(getHitTree(grp, filebase, o2::detectors::DetID::TOF));
   analyzeEMC(getHitTree(grp, filebase, o2::detectors::DetID::EMC));
