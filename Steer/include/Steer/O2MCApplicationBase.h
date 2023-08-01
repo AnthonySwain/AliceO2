@@ -25,7 +25,7 @@
 #include "SimConfig/SimParams.h"
 #include <VecGeom/base/FlatVoxelHashMap.h> 
 #include "SimConfig/GlobalProcessCutSimParam.h"
-
+#include <filesystem>
 namespace o2
 {
 namespace steer
@@ -52,8 +52,28 @@ class O2MCApplicationBase : public FairMCApplication
 
 
   //Read hashmap from file.
+
   auto& params2 = o2::GlobalProcessCutSimParam::Instance();
-  VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(params2.blackholeVoxelFile.c_str()));
+
+
+  std::string HashMapFileName = params2.blackholeVoxelFile;
+
+
+  //If the file exists, it is given to the hashmap, otherwise the hashmap becomes a nullptr
+  if (HashMapFileName != ""){
+  if (std::filesystem::exists(HashMapFileName)){
+    std::cout<< "File Exists" << std::endl;
+    VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(HashMapFileName.c_str()));
+  }
+
+  else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
+  }
+
+
+  //else {VoxelMap.reset(nullptr);}
+
+
+  
 
   /*
   VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
@@ -69,7 +89,7 @@ class O2MCApplicationBase : public FairMCApplication
   */
   //AssignVoxelTrue(0,0,0);
 
-  VoxelMap->print();
+  //VoxelMap->print();
 
   //VoxelMap->dumpToTFile("HashMap1.root"); 
   

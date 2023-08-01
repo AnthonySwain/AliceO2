@@ -311,11 +311,15 @@ void O2MCApplicationBase::Stepping()
   //If the voxel contains True, delete the particle! 
   int i =0; 
   
-  if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
-    fMC->StopTrack();
-    std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
-    i++;
-    return;
+  //If voxelmap == nullptr we just continue - no voxel map loaded
+
+  if (VoxelMap != nullptr){
+    if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
+      fMC->StopTrack();
+      std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+      i++;
+      return;
+    }
   }
 
   if (i==1){

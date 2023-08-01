@@ -45,7 +45,7 @@ struct GlobalProcessCutSimParam : public o2::conf::ConfigurableParamHelper<Globa
   double PPCUTM = 1.0E-3; // GeV --> 1 MeV
   double TOFMAX = 0.1;    // seconds
 
-  std::string blackholeVoxelFile = "HashMap1.root";
+  std::string blackholeVoxelFile = "";
   // boilerplate stuff + make principal key "GlobalSimProcs"
   O2ParamDef(GlobalProcessCutSimParam, "GlobalSimProcs");
 };
