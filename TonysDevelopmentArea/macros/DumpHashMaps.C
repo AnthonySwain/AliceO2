@@ -127,7 +127,6 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
   
   // Annoyingly, there is no way to read boolean directly from .txt files, this shouldn't take much time compared to the length of the simulations though. 
   if (file.is_open()) {
-    std::cout << "Hi:" << std::endl;
     while (file >> digit) {
       if (digit == '0'){
         data.push_back(false);
@@ -141,7 +140,7 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
   }
   for (size_t i = 0; i < data.size(); ++i) {
         VoxelMap->addPropertyForKey(i,data[i]);
-        //std::cout << data[i] << std::endl;   
+        //std::cout << data[i];// << std::endl;   
     }
     
  
@@ -190,6 +189,7 @@ void DumpHashMaps(){
     //BuildWallXZplane(VoxelMap.get(),200,30,MinValues[0],MinValues[0]+Lengths[0],MinValues[2],MinValues[0]+Lengths[2],NumbBins[0],NumbBins[2]);
 
     //Dump to file
+
     VoxelMap->dumpToTFile("HashMap1.root");
 
 }
