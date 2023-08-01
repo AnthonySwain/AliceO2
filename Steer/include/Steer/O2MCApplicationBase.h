@@ -24,6 +24,7 @@
 #include <TVirtualMC.h>
 #include "SimConfig/SimParams.h"
 #include <VecGeom/base/FlatVoxelHashMap.h> 
+#include "SimConfig/GlobalProcessCutSimParam.h"
 
 namespace o2
 {
@@ -51,15 +52,16 @@ class O2MCApplicationBase : public FairMCApplication
 
 
   //Read hashmap from file.
-  //VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile("HashMap1.root"));
+  auto& params2 = o2::GlobalProcessCutSimParam::Instance();
+  VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(params2.blackholeVoxelFile.c_str()));
 
-  
+  /*
   VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
   std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
 
   
   BuildWallZYplane(100,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  /*
+  
   BuildWallZYplane(-230,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
 
   BuildWallXZplane(200,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);

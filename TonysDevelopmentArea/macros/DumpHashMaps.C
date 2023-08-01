@@ -12,6 +12,9 @@ R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
 #include <VecCore/Backend/VcVector.h>
 #endif
 
+#include <iostream>
+#include <fstream>
+#include <vector>
 #include <VecGeom/base/FlatVoxelHashMap.h>
 
 template <typename P, bool ScalarProperties>
@@ -28,7 +31,7 @@ bool VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, float 
   vecgeom::Vector3D<float> pos(x, y, z);
   //auto key = VoxelMap->getVoxelKey(pos);
   if (VoxelMap->isOccupied(pos)){
-    std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n";
+    //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n";
     return true;
   }
   return false;
@@ -41,11 +44,11 @@ void AssignVoxelTrue(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, f
   //auto key = (VoxelMap)->getVoxelKey(pos);
 
   //If its already been set to true, don't touch:)
-  if (VoxelCheck(VoxelMap, x,y,z)) {
+  if (VoxelCheck(VoxelMap, x,y,z)){ 
     return;
   }
   VoxelMap->addProperty(pos, true);
-  std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
+  //std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
 }
 
 float UniformRandom(float upper_bound, float lower_bound){
@@ -113,18 +116,78 @@ void BuildWallXZplane(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, 
     }
   }
 }
+template <typename P, bool ScalarProperties>
+void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, string filename/*, std::list<bool> listOfValues ,int NbinX, int NbinsY, int NbinsZ*/){
+  //Reads a binary list and converts it to a voxelmap for the optimisation
+
+  std::vector<bool> data;
+  char digit;
+  std::ifstream file;
+  file.open(filename);
+  
+  // Annoyingly, there is no way to read boolean directly from .txt files, this shouldn't take much time compared to the length of the simulations though. 
+  if (file.is_open()) {
+    std::cout << "Hi:" << std::endl;
+    while (file >> digit) {
+      if (digit == '0'){
+        data.push_back(false);
+      }
+
+      if (digit == '1'){
+        data.push_back(true);
+      }
+  }
+  file.close();
+  }
+  for (size_t i = 0; i < data.size(); ++i) {
+        VoxelMap->addPropertyForKey(i,data[i]);
+        //std::cout << data[i] << std::endl;   
+    }
+    
+ 
+  /*
+  long key;
+  unsigned int counter = 0;
+  for (int i = 0; i < NbinsX; i++){
+    for (int j = 0; j < NbinsY;j++){
+      for (int k = 0; k < NbinsZ; k++){
+        
+        if(listOfValues.size() > counter){
+        
+        key = VoxelMap->GetKeyFromCells(i,j,k);
+        auto value = std::next(my_listOfValues.begin(), key) 
+        VoxelMap->addPropertyForKey(key,value);
+        }
+        counter++;        
+      }    
+    } 
+  } */
+
+    //Another method that could be cleaner.
+    /*
+    for (auto it = listOfValues.begin(); it != listOfValues.end(); ++it) {
+        // Access the element at the current position using the iterator
+        auto element = *it;
+        int position = std::distance(my_list.begin(), it);
+        VoxelMap->addPropertyForKey(position,it);      
+    }
+    */
+} 
 
 
 void DumpHashMaps(){
-    //LoadLibraries();
 
+    //Hopefully pass the values here from config:) (or infer from the lenngth of the list of binary digits?)
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
     vecgeom::Vector3D<float> Lengths(2000,2000,6000);
-    int NumbBins[3] = {2000,2000,6000};
+    int NumbBins[3] = {200,200,600};
     std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
 
+    BinaryListToMapping(VoxelMap.get(),"BinaryList.txt");
+
     //Assign some voxels as true
-    AssignVoxelTrue(VoxelMap.get(), 0,0,0);
+    //AssignVoxelTrue(VoxelMap.get(), 0,0,0);
+    //BuildWallXZplane(VoxelMap.get(),200,30,MinValues[0],MinValues[0]+Lengths[0],MinValues[2],MinValues[0]+Lengths[2],NumbBins[0],NumbBins[2]);
 
     //Dump to file
     VoxelMap->dumpToTFile("HashMap1.root");
