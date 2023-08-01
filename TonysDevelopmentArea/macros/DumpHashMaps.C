@@ -1,12 +1,6 @@
 
-#include <VecGeom/base/FlatVoxelHashMap.h> //What is the method to do this
-
-void LoadLibraries(){
-    gSystem->AddIncludePath("VecGeom");
-    gSystem->Load("VecGeom/base/FlatVoxelHashMap.h");
-}
-
-
+R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
+#include <VecGeom/base/FlatVoxelHashMap.h> 
 
 vecgeom::Vector3D<float> FindVoxelCenter(float x,float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
@@ -50,7 +44,7 @@ void RandomAllocation(int N, float Min, float Max){
   }
 }
 
-void AssignVoxelTrue(float x, float y, float z){
+void AssignVoxelTrue(float x, float y, float z){  
   vecgeom::Vector3D<float> pos(x, y, z);
   //auto key = (VoxelMap)->getVoxelKey(pos);
 
@@ -102,7 +96,7 @@ void BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, i
 
 
 void DumpHashMaps(){
-    LoadLibraries();
+    //LoadLibraries();
 
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
     vecgeom::Vector3D<float> Lengths(2000,2000,6000);

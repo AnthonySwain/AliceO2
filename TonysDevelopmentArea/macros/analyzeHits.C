@@ -548,7 +548,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
   //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD)); //Why doesn't this dude work:(
   analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS));
   analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV));
-  //analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));
+  analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));//
   analyzeFV0(getHitTree(grp, filebase, o2::detectors::DetID::FV0));
   analyzeFDD(getHitTree(grp, filebase, o2::detectors::DetID::FDD));
   analyzeHMP(getHitTree(grp, filebase, o2::detectors::DetID::HMP));
