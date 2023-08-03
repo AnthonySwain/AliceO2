@@ -1,3 +1,5 @@
+//Dumping ground for hashmapcreation things
+
 #if defined(__linux__)
 R__ADD_INCLUDE_PATH($VECGEOM_ROOT/../../Vc/latest/include)
 #endif
