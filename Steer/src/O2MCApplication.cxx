@@ -159,20 +159,19 @@ TList *list = createhistlist(pdgs);
 //Filling the histograms with data
 for (auto &element : SteppingData)
 {
-auto pdg = element[3];
-int pdgnumb = static_cast<int>(pdg);
+  auto pdg = element[3];
+  int pdgnumb = static_cast<int>(pdg);
 
 
-//If PDG number isn't in the pdg list we just continue 
-if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs)){
-  TH3I* hist = (TH3I*)list->FindObject((std::to_string(pdgnumb)).c_str());
-  hist->Fill(element[0],element[1],element[2],1.0);
+  //If PDG number isn't in the pdg list we just continue 
+  if (std::find(std::begin(pdgs), std::end(pdgs), pdgnumb) != std::end(pdgs)){
+    TH3I* hist = (TH3I*)list->FindObject((std::to_string(pdgnumb)).c_str());
+    hist->Fill(element[0],element[1],element[2],1.0);
+  }
+
+  //else{continue;}
 }
 
-//else{continue;}
-
-
-}
 savehistlist(list, pdgs);
 delete list; 
 }

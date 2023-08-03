@@ -188,21 +188,9 @@ for (float radius = minRadius; radius < Xmax ; radius + delta_X/2)
 }
 
 
-//Overloaded - from a random txt files with 0s and 1s in. 
-void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz){
 
-    vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
-    vecgeom::Vector3D<float> Lengths(2000,2000,6000);
-    int NumbBins[3] = {Nx,Ny,Nz};
-    std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]); 
-    BinaryListToMapping(VoxelMap.get(),HashInfoFile);
-    VoxelMap->dumpToTFile(SaveMapLoc.c_str());
-
-}
-
-
-//Overloaded - create the circular layers
-void DumpHashMaps(string SaveMapLoc, int Nx, int Ny, int Nz, float minRadius){
+//create the circular layers
+void CreateRadialHashMapXY(string SaveMapLoc, int Nx, int Ny, int Nz, float minRadius){
 
     //Hopefully pass the values here from config:) (or infer from the lenngth of the list of binary digits?)
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
