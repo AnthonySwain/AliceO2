@@ -20,6 +20,20 @@ R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
 
 
 template <typename P, bool ScalarProperties>
+void AssignVoxelTrue(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, float x, float y, float z)
+{
+  vecgeom::Vector3D<float> pos(x, y, z);
+  //auto key = (VoxelMap)->getVoxelKey(pos);
+
+  //If its already been set to true, don't touch:)
+  if (VoxelCheck(VoxelMap, x,y,z)){ 
+    return;
+  }
+  VoxelMap->addProperty(pos, true);
+  //std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
+}
+
+template <typename P, bool ScalarProperties>
 void CreateCircularLayersXYplane(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, int Nx, int Ny, int Nz,float minRadius, 
 float Xmin, float Ymin, float Zmin, float Xmax, float Ymax, float Zmax){
 /*
@@ -32,9 +46,15 @@ float delta_Z = (Zmax -Zmin)/float(Nz);
 float yplus;
 float yminus; 
 
+
+vecgeom::Vector3D<float> PosYplus;
+
+vecgeom::Vector3D<float> PosYminus;
+
 //this is for one radius, need to do it for more
-for (float radius = minRadius; radius < Xmax ; radius + delta_X/2)
-  for (float X = Xmin; X < Xmax; X + delta_X/2){
+for (float radius = minRadius; radius < Xmax ; radius += delta_X/2){
+  std::cout << radius << std::endl;
+  for (float X = Xmin; X < Xmax; X += delta_X/2){
 
     //find y (remember 2 solns)
     yplus = sqrt( (radius * radius) - (X*X));
@@ -45,11 +65,13 @@ for (float radius = minRadius; radius < Xmax ; radius + delta_X/2)
       continue; //Outside the range of the voxel map, we don't care
     }
 
-    for (float Z = Zmin; Z < Zmax; Z + delta_Z){ //over all Z 
-      VoxelMap->addProperty(vecgeom::Vector3D<float>(X,yplus,Z));
+    for (float Z = Zmin; Z < Zmax; Z += delta_Z){ //over all Z 
 
-      VoxelMap->addProperty(vecgeom::Vector3D<float>(X,yminus,Z));
+      AssignVoxelTrue(VoxelMap, X,yplus,Z);
+      AssignVoxelTrue(VoxelMap, X,yminus,Z);
+      //VoxelMap->addProperty(PosYminus,true);
     }
+  }
 }
 }
 

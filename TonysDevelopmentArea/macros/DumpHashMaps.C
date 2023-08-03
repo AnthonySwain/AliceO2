@@ -153,7 +153,7 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
 
 
 template <typename P, bool ScalarProperties>
-void CreateCircularLayersXYplane(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, int Nx, int Ny, int Nz,float minRadius, 
+void CreateCircularLayersXYplane(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, int Nx, int Ny, int Nz,float minRadius,
 float Xmin, float Ymin, float Zmin, float Xmax, float Ymax, float Zmax){
 /*
 Creates blackholes beyond a certain radius in the xy plane. E.g. if r = 5, everything beyond x^2 + y^2 = 25, would be blackholes for the particles. 
@@ -165,9 +165,14 @@ float delta_Z = (Zmax -Zmin)/float(Nz);
 float yplus;
 float yminus; 
 
+vecgeom::Vector3D<float> PosYplus;
+
+vecgeom::Vector3D<float> PosYminus;
+
 //this is for one radius, need to do it for more
-for (float radius = minRadius; radius < Xmax ; radius + delta_X/2)
-  for (float X = Xmin; X < Xmax; X + delta_X/2){
+for (float radius = minRadius; radius < Xmax ; radius += delta_X/2){
+  std::cout << radius << std::endl;
+  for (float X = Xmin; X < Xmax; X += delta_X/2){
 
     //find y (remember 2 solns)
     yplus = sqrt( (radius * radius) - (X*X));
@@ -178,18 +183,19 @@ for (float radius = minRadius; radius < Xmax ; radius + delta_X/2)
       continue; //Outside the range of the voxel map, we don't care
     }
 
-    for (float Z = Zmin; Z < Zmax; Z + delta_Z){ //over all Z 
-      VoxelMap->addProperty(vecgeom::Vector3D<float>(X,yplus,Z));
+    for (float Z = Zmin; Z < Zmax; Z += delta_Z){ //over all Z 
 
-      VoxelMap->addProperty(vecgeom::Vector3D<float>(X,yminus,Z));
+      AssignVoxelTrue(VoxelMap, X,yplus,Z);
+      AssignVoxelTrue(VoxelMap, X,yminus,Z);
+      //VoxelMap->addProperty(PosYminus,true);
     }
 
 
 }
-
+}
 }
 
-
+/*
 //Overloaded - from a random txt files with 0s and 1s in. 
 void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz){
 
@@ -201,10 +207,16 @@ void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz
     VoxelMap->dumpToTFile(SaveMapLoc.c_str());
 
 }
-
+*/
 
 //Overloaded - create the circular layers
-void DumpHashMaps(string SaveMapLoc, int Nx, int Ny, int Nz, float minRadius){
+void DumpHashMaps(){
+
+    string SaveMapLoc = "HashMapRadial.root" ;
+    int Nx = 200;
+    int Ny = 200;
+    int Nz = 600; 
+    float minRadius = 250;
 
     //Hopefully pass the values here from config:) (or infer from the lenngth of the list of binary digits?)
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
