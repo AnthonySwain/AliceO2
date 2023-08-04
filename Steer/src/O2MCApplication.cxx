@@ -219,7 +219,7 @@ bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
   //auto key = VoxelMap->getVoxelKey(pos);
   if ((VoxelMap)->isOccupied(pos)){
-    std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
+    //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
     return(true);
   }
 
@@ -260,7 +260,7 @@ void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
   
   else{
   VoxelMap->addProperty(pos, true);
-  std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
+  //std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
   }}
 
 void O2MCApplicationBase::BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
@@ -324,7 +324,8 @@ void O2MCApplicationBase::Stepping()
   if (i==1){
     std::cout << "Particle has been deleted but code is continuing" << std::endl;
   }
-  //std::cout<<"Not Deleted!"<<std::endl;
+  
+  
 
   //PDG number of the particle
   auto pdg = fMC->TrackPid();
@@ -376,10 +377,14 @@ void O2MCApplicationBase::Stepping()
     mTrackRefFcn(fMC);
   }
   //Append the data of the step to the data vector
+
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
+
   SteppingData.push_back(datapoint); //Push to vector containing all step data for this event.
   /////////////////////////////////////////////////////////
   // dispatch now to stepping function in FairRoot
+
+  
   FairMCApplication::Stepping();
 }
 
@@ -474,7 +479,7 @@ void O2MCApplicationBase::finishEventCommon()
 
   ////////////////////////////////////////////////////////////////////////////
 
-
+  std::cout << "Before Adding to Histogram"<< std::endl; 
   //Saves the Histogram for this event
   TonysDevelopmentArea::AddToHistogram("HistList0",SteppingData);
 

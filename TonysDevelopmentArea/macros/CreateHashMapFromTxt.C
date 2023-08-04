@@ -19,6 +19,8 @@ R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
 #include <cmath>
 
 
+
+
 template <typename P, bool ScalarProperties>
 void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, string filename/*, std::list<bool> listOfValues ,int NbinX, int NbinsY, int NbinsZ*/){
   //Reads a binary list and converts it to a voxelmap for the optimisation

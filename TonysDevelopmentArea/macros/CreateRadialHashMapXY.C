@@ -18,6 +18,18 @@ R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
 #include <VecGeom/base/FlatVoxelHashMap.h>
 #include <cmath>
 
+template <typename P, bool ScalarProperties>
+bool VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, float x,float y, float z)
+{
+  vecgeom::Vector3D<float> pos(x, y, z);
+  //auto key = VoxelMap->getVoxelKey(pos);
+  if (VoxelMap->isOccupied(pos)){
+    //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n";
+    return true;
+  }
+  return false;
+}
+
 
 template <typename P, bool ScalarProperties>
 void AssignVoxelTrue(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, float x, float y, float z)
@@ -32,6 +44,8 @@ void AssignVoxelTrue(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, f
   VoxelMap->addProperty(pos, true);
   //std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
 }
+
+
 
 template <typename P, bool ScalarProperties>
 void CreateCircularLayersXYplane(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMap, int Nx, int Ny, int Nz,float minRadius, 
@@ -53,7 +67,7 @@ vecgeom::Vector3D<float> PosYminus;
 
 //this is for one radius, need to do it for more
 for (float radius = minRadius; radius < Xmax ; radius += delta_X/2){
-  std::cout << radius << std::endl;
+  //std::cout << radius << std::endl;
   for (float X = Xmin; X < Xmax; X += delta_X/2){
 
     //find y (remember 2 solns)
