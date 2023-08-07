@@ -60,7 +60,6 @@ float delta_Z = (Zmax -Zmin)/float(Nz);
 float yplus;
 float yminus; 
 
-
 vecgeom::Vector3D<float> PosYplus;
 
 vecgeom::Vector3D<float> PosYminus;
