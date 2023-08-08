@@ -212,7 +212,7 @@ void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz
 //Overloaded - create the circular layers
 void DumpHashMaps(){
 
-    string SaveMapLoc = "HashMapRadial.root" ;
+    string SaveMapLoc = "HashMap.root" ;
     int Nx = 200;
     int Ny = 200;
     int Nz = 600; 
@@ -223,8 +223,11 @@ void DumpHashMaps(){
     vecgeom::Vector3D<float> Lengths(2000,2000,6000);
     int NumbBins[3] = {Nx,Ny,Nz};
     std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]); 
-    CreateCircularLayersXYplane(VoxelMap.get(), Nx, Ny, Nz, minRadius,
-    MinValues[0],MinValues[1],MinValues[2], MinValues[0]+Lengths[0],MinValues[1]+Lengths[1],MinValues[2]+Lengths[2]);
+    //CreateCircularLayersXYplane(VoxelMap.get(), Nx, Ny, Nz, minRadius,
+    //MinValues[0],MinValues[1],MinValues[2], MinValues[0]+Lengths[0],MinValues[1]+Lengths[1],MinValues[2]+Lengths[2]);
+    
+    BuildWallXZplane(VoxelMap.get(), 200.0, 30, MinValues[0], MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], Nx,Nz);
+    
     VoxelMap->dumpToTFile(SaveMapLoc.c_str());
 
 }

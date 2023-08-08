@@ -64,8 +64,8 @@ vecgeom::Vector3D<float> PosYplus;
 
 vecgeom::Vector3D<float> PosYminus;
 
-//this is for one radius, need to do it for more
-for (float radius = minRadius; radius < Xmax ; radius += delta_X/2){
+//Iterate over all radii possible
+for (float radius = minRadius; radius < sqrt(2)*Xmax ; radius += delta_X/2){
   //std::cout << radius << std::endl;
   for (float X = Xmin; X < Xmax; X += delta_X/2){
 
