@@ -44,6 +44,11 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
   file.close();
   }
   for (size_t i = 0; i < data.size(); ++i) {
+
+        if (data[i]==false){ //This is needed due to poor coding in the stepping part to check for blackholes...
+          continue;
+        }
+
         VoxelMap->addPropertyForKey(i,data[i]);
         //std::cout << data[i];// << std::endl;   
     }

@@ -217,8 +217,14 @@ vecgeom::Vector3D<float> O2MCApplicationBase::FindVoxelCenter(float x,float y, f
 
 bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
+  int length;
   //auto key = VoxelMap->getVoxelKey(pos);
-  if ((VoxelMap)->isOccupied(pos)){
+
+  if ((VoxelMap)->isOccupied(pos)){ //THIS IS A BAD METHOD, IT HAS LEAD TO PROBLEMS!! EXPLICITLY GET THE VALUE 
+
+  //if ((VoxelMap)->getProperties(pos,length)){
+
+  //}
     //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
     return(true);
   }

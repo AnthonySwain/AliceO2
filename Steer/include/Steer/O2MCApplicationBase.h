@@ -46,6 +46,7 @@ class O2MCApplicationBase : public FairMCApplication
   O2MCApplicationBase(const char* name, const char* title, TObjArray* ModList, const char* MatName) : FairMCApplication(name, title, ModList, MatName), mCutParams(o2::conf::SimCutParams::Instance())
   {
 
+    
   vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
   vecgeom::Vector3D<float> Lengths(2000,2000,6000); //Is this the lengths of individual voxels or the entire voxelmap?
   int NumbBins[3] = {200,200,600}; 
