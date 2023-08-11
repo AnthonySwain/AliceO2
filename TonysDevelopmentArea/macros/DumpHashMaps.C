@@ -226,7 +226,7 @@ void DumpHashMaps(){
     //CreateCircularLayersXYplane(VoxelMap.get(), Nx, Ny, Nz, minRadius,
     //MinValues[0],MinValues[1],MinValues[2], MinValues[0]+Lengths[0],MinValues[1]+Lengths[1],MinValues[2]+Lengths[2]);
     
-    BuildWallXZplane(VoxelMap.get(), 200.0, 30, MinValues[0], MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], Nx,Nz);
+    BuildWallXZplane(VoxelMap.get(), 150, 30, MinValues[0], MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], Nx,Nz);
     
     VoxelMap->dumpToTFile(SaveMapLoc.c_str());
 

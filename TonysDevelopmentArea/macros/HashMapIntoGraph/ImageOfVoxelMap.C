@@ -52,7 +52,7 @@ void ProjectionHistogram(string projectionaxis, TH3I* hist, string savename){
     projection->GetYaxis()->SetTitleOffset(1.2);
     //projection->GetZaxis()->SetTitleOffset(1.4);
     //projection ->GetZaxis()->SetTitle("count");
-    projection ->Draw("col");
+    projection ->Draw("");
 
     c3->SetRightMargin(0.10);
     c3->SetLeftMargin(0.10);
@@ -72,13 +72,13 @@ std::array<float, 3> CellToPoint(vecgeom::Vector3D<float> MinValues, vecgeom::Ve
 int Kx, int Ky, int Kz){
     /* Takes a cell position and reutrns the position of the center of the bin */
 
-    float delta_x = Lengths[0] / NumbBins [0];
-    float delta_y = Lengths[1] / NumbBins [1];
-    float delta_z = Lengths[2] / NumbBins [2];
+    float delta_x = Lengths[0] / NumbBins[0];
+    float delta_y = Lengths[1] / NumbBins[1];
+    float delta_z = Lengths[2] / NumbBins[2];
 
-    float x = MinValues[0] + delta_x*float(Kx) + float(Kx)*0.5;
-    float y = MinValues[1] + delta_y*float(Ky) + float(Ky)*0.5;
-    float z = MinValues[2] + delta_z*float(Kz) + float(Kz)*0.5;
+    float x = MinValues[0] + delta_x*float(Kx) + delta_x*0.5;
+    float y = MinValues[1] + delta_y*float(Ky) + delta_y*0.5;
+    float z = MinValues[2] + delta_z*float(Kz) + delta_z*0.5;
     std::array<float,3> point = {x,y,z};
     //std::cout << point[0] << ", " <<point[1] << ", " <<point[2] << std::endl;
     return point;

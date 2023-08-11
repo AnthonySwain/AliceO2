@@ -67,7 +67,7 @@ vecgeom::Vector3D<float> PosYminus;
 //Iterate over all radii possible
 for (float radius = minRadius; radius < sqrt(2)*Xmax ; radius += delta_X/2){
   //std::cout << radius << std::endl;
-  for (float X = Xmin; X < Xmax; X += delta_X/2){
+  for (float X = Xmin; X < Xmax; X += delta_X/2){ //room for improvement, leads to unwanted/not enough sampling around y=0
 
     //find y (remember 2 solns)
     yplus = sqrt( (radius * radius) - (X*X));

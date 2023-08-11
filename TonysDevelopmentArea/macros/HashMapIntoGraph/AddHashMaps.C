@@ -56,9 +56,9 @@ int Kx, int Ky, int Kz){
     float delta_y = Lengths[1] / NumbBins [1];
     float delta_z = Lengths[2] / NumbBins [2];
 
-    float x = MinValues[0] + delta_x*float(Kx) + float(Kx)*0.5;
-    float y = MinValues[1] + delta_y*float(Ky) + float(Ky)*0.5;
-    float z = MinValues[2] + delta_z*float(Kz) + float(Kz)*0.5;
+    float x = MinValues[0] + delta_x*float(Kx) + delta_x*0.5;
+    float y = MinValues[1] + delta_y*float(Ky) + delta_y*0.5;
+    float z = MinValues[2] + delta_z*float(Kz) + delta_z*0.5;
     std::array<float,3> point = {x,y,z};
     //std::cout << point[0] << ", " <<point[1] << ", " <<point[2] << std::endl;
     return point;

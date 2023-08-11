@@ -160,6 +160,41 @@ void CountStepsZYplane(TH3I* histogram, int Xval){
     std::cout << "Entries to the left of X = -" << Xval << " = " << entriesBelowThreshold << std::endl;
 }
 
+void CountStepsXZplane(TH3I* histogram, int Yval){
+    //Counts the number of steps either side of a wall, made for debugging
+    //There is a clean implementation to do this for any plane without needing multiple functions
+    std::cout << "Before Cuts: " << histogram->GetEntries() << std::endl;
+    //perform some kind of cut
+
+    //Left side of the wall
+    int entries = histogram->GetEntries();
+    //std::cout << histogram->GetEntries() << std::endl;
+
+    unsigned long long int entriesAboveThreshold = 0;
+    unsigned long long int entriesBelowThreshold = 0;
+
+    for (int xBin = 1; xBin <= histogram->GetNbinsX(); ++xBin) {
+        for (int yBin = 1; yBin <= histogram->GetNbinsY(); ++yBin) {
+            for (int zBin = 1; zBin <= histogram->GetNbinsZ(); ++zBin) {
+                double xValue = histogram->GetXaxis()->GetBinCenter(xBin);
+                double yValue = histogram->GetYaxis()->GetBinCenter(yBin);
+                double zValue = histogram->GetZaxis()->GetBinCenter(zBin);
+
+                if (yValue > Yval) {
+                    entriesAboveThreshold += histogram->GetBinContent(xBin, yBin, zBin);
+                }
+                if (yValue < -Yval) {
+                    entriesBelowThreshold += histogram->GetBinContent(xBin, yBin, zBin);
+                }
+            }
+        }
+    }
+  
+    std::cout << "Entries above Y = " << Yval << " = " << entriesAboveThreshold << std::endl;
+
+    std::cout << "Entries below y = -" << Yval << " = " << entriesBelowThreshold << std::endl;
+}
+
 void ProjectionHistogramExcludeBeamPipe(string projectionaxis, TH3I* hist, string savename,int xMin, int xMax, int yMin, int yMax, int zMin, int zMax){
     //debugging purposes
   /*projection axis is the axis you want to take the projection of, eg xy
@@ -507,10 +542,12 @@ void AllProjections(){
     HitStepGraph(histHits,histSteps,HitsDividedSteps);
     HitStepGraphRadial(histHits,histSteps,HitsDividedSteps);
 
-    CountStepsZYplane(histSteps, 100);
-    CountStepsZYplane(histHits, 100);
+    //CountStepsZYplane(histSteps, 100);
+    //CountStepsZYplane(histHits, 100);
 
 
+    CountStepsXZplane(histSteps, 170);
+    CountStepsXZplane(histHits, 170);
   
 
 
