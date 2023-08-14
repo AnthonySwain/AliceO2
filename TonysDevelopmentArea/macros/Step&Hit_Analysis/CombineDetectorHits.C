@@ -1,20 +1,27 @@
+/*
+    Macro that combines all the detectors hits together into one 3D histogram, also combining the different particle types
+*/
+
 #include <iostream>
 #include <filesystem>
+#include "Globals.h" //Get global variables for all macros
 
 void CombineDetectorHits(){
-    //Macro to create a 1D histogram / bar chart showing the number of hits per histogram 
-
+    /*
+    Macro that combines all the detectors hits together into one 3D histogram, also combining the different particle types
+    */
 
     TFile *file = new TFile("HitsInDetectorsHistograms.root","READ");
     TList* list;
     TH3I* hist;
 
-    TH3I* combinedHits = new TH3I("CombinedHistList", "AllParticleHits",100,-1000,1000,100,-1000,1000,100,-3000,3000);
-    const char* detectors[12] = {"ITSHit","MFTHit","TOFHit","EMCHit","PHSHit","CPVHit",/*"FT0Hit",*/
-    "FV0Hit","FDDHit","HMPHit", "MCHHit", "MIDHit", "ZDCHit"};
+    TH3I* combinedHits = new TH3I("CombinedHistList", "AllParticleHits",
+    numb_bins[0],min_values[0],max_values[0],
+    numb_bins[1],min_values[1],max_values[1],
+    numb_bins[2],min_values[2],max_values[2]);
     
-    int pdgs[8] = {11,13,-11,-13,22,111,211,-211};
-    
+    //Iterates through all the detectors (see global file) and also through the particles saved (also see global file)
+    //Adding all the histograms together      
     for (int i =0; i<sizeof(detectors)/sizeof(const char*); i++)
     {
         file->GetObject(detectors[i],list);
@@ -28,16 +35,13 @@ void CombineDetectorHits(){
         }
     }
 
-    //TPC Detector
-
+    //Include TPC Detector
     TH3I* TPCHist;
     file->GetObject("TPC", TPCHist);
-    std::cout << "\n TPCHist entries" <<  TPCHist->GetEntries() << std::endl;
-    std::cout << "\n CombinedHist entries before" <<  combinedHits->GetEntries() << std::endl;
     combinedHits->Add(TPCHist);
-    std::cout << "\n CombinedHist entries after" <<  combinedHits->GetEntries() << std::endl;
-    //file->Close();
 
+
+    //Save to file
     TFile *f = new TFile("AllHits.root","RECREATE");
     combinedHits->Write("AllHits", TObject::kSingleKey);
     //f->Close();

@@ -1,23 +1,31 @@
+/*
+    Combines all the different particles' steps together into one single 3D histogram
+*/
 
 #include <iostream>
 #include <filesystem>
-
+#include "Globals.h" //Get global variables for all macros
 
 
 
 void CombineSteps(){
-    //Macro to create a 1D histogram / bar chart showing the number of hits per histogram 
-
+    /*
+    Combines all the different particles' steps together into one single 3D histogram
+    */
 
     TFile *file = new TFile("AllSteps.root","READ");
     TList* list;
+
+    //Getting the file where all the different particle steps are saved (from analyzeSteps.C)
     file->GetObject("Allsteps",list);
     TH3I* hist;
 
-    TH3I* combinedSteps = new TH3I("CombinedHistList", "AllParticleSteps",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+    TH3I* combinedSteps = new TH3I("CombinedHistList", "AllParticleSteps",
+    numb_bins[0],min_values[0],max_values[0],
+    numb_bins[1],min_values[1],max_values[1],
+    numb_bins[2],min_values[2],max_values[2]);
     
-    int pdgs[8] = {11,13,-11,-13,22,111,211,-211};
-    
+    //Iterates through all pdgs (see global file) to combine all of the histograms into one
     for (int j=0; j< sizeof(pdgs)/sizeof(int);j++)
     {   
 
@@ -27,7 +35,7 @@ void CombineSteps(){
         
     }
 
-
+    //Save
     TFile *f = new TFile("AllStepsCombined.root","RECREATE");
     combinedSteps->Write("AllStepsCombined", TObject::kSingleKey);
     f->Close();

@@ -22,12 +22,16 @@
 
 #include <typeinfo>
 
+#include "Globals.h" //Get global variables for all macros
+
 bool file_exists(const std::string &filename) {
+  /*Check whether a file exists*/
   return std::filesystem::exists(filename);
 }
 
 int numDigits(int number)
 {
+  /*Returns the number of digits of an integer*/
     int digits = 1;
 
     while (number>=10) {
@@ -40,7 +44,11 @@ int numDigits(int number)
 void savehistlist(TList* list, std::string filepath)
 { 
 
-  //Create new histlist if one already exists 
+  /* 
+  Saves a TList to a desired location (filepath)
+  Creates new histlist if the .root file already exists and contains the same named TList. 
+  */
+
   int i = 0; 
   while (file_exists(filepath+".root")){
     int digits = numDigits(i);
@@ -58,14 +66,23 @@ void savehistlist(TList* list, std::string filepath)
   list->Write("histlist", TObject::kSingleKey);
 }
 
-TList* createhistlist(int (&pdgs)[8])
+template <std::size_t W>
+TList* createhistlist(int (&pdgs)[W])
 {   
+  //naming is so it doesn't clash with other macros with the same function names
+//when running 'AllMacros.C' (probably better to use a namespace but ah well)
+
+/* Creates and returns a TList of histograms for each particle that is wanted to be investigated
+  Input is a int array of PDGid of particles to be investigated */
     TList *list = new TList();
     
     for (int i : pdgs){
         std::string name1 = std::to_string(i);
         std::string name2 = "Histogram"+std::to_string(i);
-        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,100,-3000,3000);
+        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),
+        numb_bins[0],min_values[0],max_values[0],
+        numb_bins[1],min_values[1],max_values[1],
+        numb_bins[2],min_values[2],max_values[2]);
         list -> Add(h1);
     }
    return (list);
@@ -76,11 +93,19 @@ TString gPrefix("");
 template <typename Hit, typename Accumulator>
 Accumulator analyse(TTree* tr, const char* brname)
 {
+  /*
+  Analyses the hits. Custom addition gets all the hits for each detector as a TList in a root file
+  i.e TList FT0 -> Histogram for each PDG put in the array in the global variables
+  TList TRD -> Histogram for each PDG Put in the array in the global variables
+  for all the detectors, all saved to the same root file.
+  */
+
   Accumulator prop;
   auto br = tr->GetBranch(brname);
   if (!br) {
     return prop;
   }
+
   auto entries = br->GetEntries();
   
   std::vector<Hit>* hitvector = nullptr;
@@ -95,9 +120,10 @@ Accumulator analyse(TTree* tr, const char* brname)
   
   
   //Need way of getting PDG number of particles in detectors!! 
-  int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
+  //int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
 
+  //Iterate through all entries to the hit file adding the corresponding PDG to its own histogram
   std::cout << entries << std::endl;
   for (int i = 0; i < entries; ++i) {
 
@@ -115,7 +141,7 @@ Accumulator analyse(TTree* tr, const char* brname)
       o2::MCTrack thisTrack = (*MCTrack).at(trackID);
       int PDGnumb = thisTrack.GetPdgCode();
 
-      //Write to corresponding histogram of 
+      //Fill the corresponding histogram to the PDG number with the data 
       if (std::find(std::begin(pdgs), std::end(pdgs), PDGnumb) != std::end(pdgs))
         {
         TH3I* hist = (TH3I*)particleHistograms->FindObject((std::to_string(PDGnumb)).c_str());
@@ -124,12 +150,11 @@ Accumulator analyse(TTree* tr, const char* brname)
         }
     }
   }
-  std::cout <<  "here" << std::endl;
-  //Adds the list of hits for each particle type we care about in the detector to the saved file.
- 
+  
+  //Save the histograms
   TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
-
   particleHistograms->Write(brname, TObject::kSingleKey);
+
   delete f;
   delete o2sim_Kine;
 
@@ -205,7 +230,7 @@ struct HitStats : public HitStatsBase {
   }
 };
 
-/*
+/* DOESN'T WORK
 struct TRDHitStats : public HitStatsBase {
   // adds a hit to the statistics
   void addHit(o2::trd::Hit const& hit)
@@ -282,9 +307,14 @@ struct TPCHitStats : public HitStatsBase {
 TPCHitStats analyseTPC(TTree* tr)
 {
   TPCHitStats prop;
+  /*
+  Analyses the hits. Custom addition gets all the hits for each detector as a TList in a root file
+  i.e TList TPC -> Histogram for each PDG put in the array in the global variables
+  This is the TPC part of the above as it is split into sectors. Same methodology as in analyse()
+   */
 
 
-  //Unsure how to get PDGid from this, so I don't... 
+  //Unsure how to get PDGid from this, so I don't... (Commented out)
   /*
   //Open o2sim_Kine.root
   //Get the O2Sim tree -> MCTracks branch, get the trackID and find the PDGid from this. 
@@ -297,7 +327,12 @@ TPCHitStats analyseTPC(TTree* tr)
   int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
   Method for PDGid*/
-  TH3I* hist = new TH3I("TPCHits","TPCHits",100,-1000,1000,100,-1000,1000,100,-3000,3000);
+
+  TH3I* hist = new TH3I("TPCHits","TPCHits",
+  numb_bins[0],min_values[0],max_values[0],
+  numb_bins[1],min_values[1],max_values[1],
+  numb_bins[2],min_values[2],max_values[2]);
+
   string brname = "TPC";
 
   for (int sector = 0; sector < 35; ++sector) {
@@ -315,6 +350,7 @@ TPCHitStats analyseTPC(TTree* tr)
 
     for (int i = 0; i < entries; ++i) {
       br->GetEntry(i);
+
       /*
       tree->GetEntry(i);
       Method for PDGid*/
@@ -347,17 +383,16 @@ TPCHitStats analyseTPC(TTree* tr)
     }
   }
 
-  //Adds the list of hits for each particle type we care about in the detector to the saved file.
+  //Saves the 3D histogram
  
   TFile *f = new TFile("HitsInDetectorsHistograms.root","UPDATE");
-
-  //particleHistograms->Write(brname.c_str(), TObject::kSingleKey);
   hist->Write(brname.c_str(), TObject::kSingleKey);
   delete f;
   
   /*
   delete o2sim_Kine;
   Method for PDGid*/
+
   prop.normalize();
   return prop;
 };
@@ -548,7 +583,7 @@ void analyzeHits(const char* filebase = "o2sim", const char* prefix = "")
   //analyzeTRD(getHitTree(grp, filebase, o2::detectors::DetID::TRD)); //Why doesn't this dude work:(
   analyzePHS(getHitTree(grp, filebase, o2::detectors::DetID::PHS));
   analyzeCPV(getHitTree(grp, filebase, o2::detectors::DetID::CPV));
-  //analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0));//
+  //analyzeFT0(getHitTree(grp, filebase, o2::detectors::DetID::FT0)); //Doesn't work either
   analyzeFV0(getHitTree(grp, filebase, o2::detectors::DetID::FV0));
   analyzeFDD(getHitTree(grp, filebase, o2::detectors::DetID::FDD));
   analyzeHMP(getHitTree(grp, filebase, o2::detectors::DetID::HMP));
