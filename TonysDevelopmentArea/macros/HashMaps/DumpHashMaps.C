@@ -1,4 +1,4 @@
-//Dumping ground for hashmapcreation things
+/* Dumping ground for hashmapcreation things, it's outdated now but some of the code could be usable somewhere else... (e.g. build walls)*/
 
 #if defined(__linux__)
 R__ADD_INCLUDE_PATH($VECGEOM_ROOT/../../Vc/latest/include)
@@ -196,7 +196,6 @@ for (float radius = minRadius; radius < Xmax ; radius += delta_X/2){
 }
 
 /*
-//Overloaded - from a random txt files with 0s and 1s in. 
 void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz){
 
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
@@ -209,7 +208,7 @@ void DumpHashMaps(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz
 }
 */
 
-//Overloaded - create the circular layers
+
 void DumpHashMaps(){
 
     string SaveMapLoc = "HashMap.root" ;

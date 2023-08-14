@@ -31,6 +31,7 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
   file.open(filename);
   
   // Annoyingly, there is no way to read boolean directly from .txt files, this shouldn't take much time compared to the length of the simulations though. 
+  //Below reads the .txt file digit by digit and adds it onto the vector
   if (file.is_open()) {
     while (file >> digit) {
       if (digit == '0'){
@@ -45,12 +46,15 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
   }
   for (size_t i = 0; i < data.size(); ++i) {
 
-        if (data[i]==false){ //This is needed due to poor coding in the stepping part to check for blackholes...
+        if (data[i]==false){ 
+          /*DO NOT write the key as false, it is this by default and writing it makes 
+          a) Occupied which messes up how particles are deleted (the voxel is checked to see if it is occupied, not set to true)
+          b) Takes up space that isn't needed to be taken as it's default is false / not occupied */
           continue;
         }
 
+        //Set the voxel to true
         VoxelMap->addPropertyForKey(i,data[i]);
-        //std::cout << data[i];// << std::endl;   
     }
 } 
 
@@ -58,12 +62,20 @@ void BinaryListToMapping(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* VoxelMa
 
 //from a random txt files with 0s and 1s in. 
 void CreateHashMapFromTxt(string HashInfoFile, string SaveMapLoc, int Nx, int Ny, int Nz){
+    /* Creates a boolean hashmap from a single line .txt file containing 0's & 1s (no spacing, e.g. 0101000010) 
+    HashInfoFile = filepath to the .txt file 
+    SaveMapLoc = where to save the created map (include .root)
+    Nx,Ny,Nz = number of bins in X,Y,Z directions respectively (be careful that Nx,Ny,Nz = total number of 0's/1's)*/
 
     vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
     vecgeom::Vector3D<float> Lengths(2000,2000,6000);
     int NumbBins[3] = {Nx,Ny,Nz};
     std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]); 
+    
+    //Does what it says on the tin
     BinaryListToMapping(VoxelMap.get(),HashInfoFile);
+    
+    //Saves the mapping
     VoxelMap->dumpToTFile(SaveMapLoc.c_str());
 
 }

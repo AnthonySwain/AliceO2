@@ -21,8 +21,10 @@ R__ADD_INCLUDE_PATH($VECGEOM_ROOT/include)
 
 void ProjectionHistogram(string projectionaxis, TH3I* hist, string savename){
 
-  /*projection axis is the axis you want to take the projection of, eg xy
-    hist is the 3D histogram*/
+  /* Creates desired 2D projection from a 3D histogram and saves the output as a .pdf file
+    projection axis is the axis you want to take the projection of, eg xy
+    hist is the 3D histogram where projections are taken from
+    SaveName - desired name of the saved .pdf file*/
 
     TCanvas *c3 = new TCanvas("c3");
     TH1* projection = nullptr;
@@ -80,14 +82,14 @@ int Kx, int Ky, int Kz){
     float y = MinValues[1] + delta_y*float(Ky) + delta_y*0.5;
     float z = MinValues[2] + delta_z*float(Kz) + delta_z*0.5;
     std::array<float,3> point = {x,y,z};
-    //std::cout << point[0] << ", " <<point[1] << ", " <<point[2] << std::endl;
+
     return point;
 
 }
 
 
 void ImageOfVoxelMap(std::string filepath, int Nx, int Ny, int Nz){
-    /* Takes a voxel map and turns it into a root histogram */
+    /* Takes a .root voxel map and turns it into 2D root histograms */
 
 vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
 vecgeom::Vector3D<float> Lengths(2000,2000,6000);
@@ -114,7 +116,7 @@ if (filepath != ""){
     }
   }
 
-
+//Iterate over all cells, adding their value to the corresponding position in the histogram 
 for (int i = 0; i < Nx; i++){
     for (int j = 0; j < Ny; j++){
         for (int k = 0; k < Nz; k++){
@@ -130,19 +132,18 @@ for (int i = 0; i < Nx; i++){
     }
 }
 
-//Histogram Projections
+//Setting up the histogram for plotting
 HashMapVisual->GetXaxis()->SetTitle("x");
 HashMapVisual->GetYaxis()->SetTitle("y");
 HashMapVisual->GetZaxis()->SetTitle("z");
 HashMapVisual->SetTitle("Hashmap Visualisation");
 HashMapVisual->SetContour(100);
 
-
 TCanvas *c1 = new TCanvas("c1");
 
 HashMapVisual->Draw("BOX2");
 
-
+//Creating direcory to save the maps 
 std::filesystem::create_directories("./HashMapVisualisation");
 string name = "./HashMapVisualisation/3DVisual.pdf";
 HashMapVisual->SetStats(0);
@@ -152,8 +153,10 @@ HashMapVisual->GetZaxis()->SetTitleOffset(1.5);
 c1->SetRightMargin(0.10);
 c1->SetLeftMargin(0.10);
 c1->SetBottomMargin(0.10);
-//c1->Print(name.c_str());
+//Print the 3D histogram here if you wish to
 c1->Close();    
+
+//2D Projections
 ProjectionHistogram("yx",HashMapVisual,"ProjectionHashmap");
 ProjectionHistogram("zx",HashMapVisual,"ProjectionHashmap");
 ProjectionHistogram("zy",HashMapVisual,"ProjectionHashmap");
