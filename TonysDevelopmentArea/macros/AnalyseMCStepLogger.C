@@ -1,5 +1,6 @@
+//OUTDATED (Tbh it probably isn't but I haven't used it in so long - made when I was learning everything so isn't the best coding techniques...)
 //Macro to create a 3D histogram of different particles step locations in the ALICE detector. 
-
+ 
 //I'm just going to assume the data is nicely laid out (i.e no steps outside the ALICE detector region), if this doesn't happen to be the case, a fix will have to be implemented but for now - fingers crossed!
 
 #include "/home/answain/alice/VMCStepLogger/MCStepLogger/include/MCStepLogger/StepInfo.h"
@@ -32,7 +33,7 @@ void ProjectionHistogram(string projectionaxis, TH3I* hist, int pdgnumber){
     }
 
     if (projectionaxis == "zx"){
-        projection ->GetXaxis()->SetTitle("x");
+        projection ->GetXaxis()->SetTitle("x");//OUTDATED
         projection ->GetYaxis()->SetTitle("z");
     }
 

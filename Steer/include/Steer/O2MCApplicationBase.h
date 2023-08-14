@@ -47,18 +47,14 @@ class O2MCApplicationBase : public FairMCApplication
   {
 
     
-  vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
-  vecgeom::Vector3D<float> Lengths(2000,2000,6000); //Is this the lengths of individual voxels or the entire voxelmap?
-  int NumbBins[3] = {200,200,600}; 
 
 
-  //Read hashmap from file.
+
+  //Read hashmap from file - get the filename entered with the config from the code e.g.
+  //o2-sim --configKeyValues="GlobalSimProcs.blackholeVoxelFile=/path/to/rootfile -g pythia8pp -n 20"
 
   auto& params2 = o2::GlobalProcessCutSimParam::Instance();
-
-
   std::string HashMapFileName = params2.blackholeVoxelFile;
-
 
   //If the file exists, it is given to the hashmap, otherwise the hashmap becomes a nullptr
   if (HashMapFileName != ""){
@@ -69,14 +65,15 @@ class O2MCApplicationBase : public FairMCApplication
 
   else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
   }
-
-
-  //else {VoxelMap.reset(nullptr);}
-
-
   
 
   /*
+  For when the hashmap was created here, rather than read (now outdated as this is obviously not the best method...)
+
+  vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
+  vecgeom::Vector3D<float> Lengths(2000,2000,6000); 
+  int NumbBins[3] = {200,200,600}; 
+
   VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
   std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
 
@@ -87,13 +84,14 @@ class O2MCApplicationBase : public FairMCApplication
 
   BuildWallXZplane(200,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
   BuildWallXZplane(-230,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
+
+  AssignVoxelTrue(0,0,0);
+
+  VoxelMap->print();
+
+  VoxelMap->dumpToTFile("HashMap1.root"); 
   */
-  //AssignVoxelTrue(0,0,0);
 
-  //VoxelMap->print();
-
-  //VoxelMap->dumpToTFile("HashMap1.root"); 
-  
   initTrackRefHook();   
 
 
@@ -111,6 +109,8 @@ class O2MCApplicationBase : public FairMCApplication
   void AddParticles() override;
 
   /////////////////////////////////////////////
+  //These are remenants from when the hashmap was created at runtime.
+  //Now, the hashmap should be made by root macros and the filepath passed to the simulation
   bool VoxelCheck(float x, float y, float z);
   void AssignVoxelTrue(float x, float y, float z);
   void RandomAllocation(int n, float Min, float Max);
@@ -118,7 +118,6 @@ class O2MCApplicationBase : public FairMCApplication
   void BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins);
   void BuildWallXYplane(float Zval, int thickness, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins);
   void BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins);
-  void ReadHashMap();
   /////////////////////////////////////////////
 
   // specific implementation of our hard geometry limits
@@ -141,11 +140,6 @@ class O2MCApplicationBase : public FairMCApplication
   void initTrackRefHook();
 
   ClassDefOverride(O2MCApplicationBase, 1);
-
-
-  //private:
-  //std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;//(vecgeom::Vector3D<float> const& lower,vecgeom::Vector3D<float> const& length,int Nx,int Ny,int Nz); //VoxelHashMap definition
-
 };
 
 } // end namespace steer

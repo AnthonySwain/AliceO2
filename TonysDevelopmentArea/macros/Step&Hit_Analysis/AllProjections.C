@@ -6,8 +6,6 @@ and makes various plots of them from the functions + whatever I have added. All 
 */
 
 
-
-
 #include <algorithm>
 #include <iostream>
 #include <filesystem>

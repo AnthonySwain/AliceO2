@@ -118,9 +118,6 @@ Accumulator analyse(TTree* tr, const char* brname)
   std::vector<o2::MCTrack>* MCTrack = nullptr;
   tree->SetBranchAddress("MCTrack",&MCTrack);
   
-  
-  //Need way of getting PDG number of particles in detectors!! 
-  //int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
 
   //Iterate through all entries to the hit file adding the corresponding PDG to its own histogram
@@ -323,8 +320,6 @@ TPCHitStats analyseTPC(TTree* tr)
   std::vector<o2::MCTrack>* MCTrack = nullptr;
   tree->SetBranchAddress("MCTrack",&MCTrack);
 
-  //Need way of getting PDG number of particles in detectors!! 
-  int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model, still need a way of syncronising this across the files really... 
   TList* particleHistograms = createhistlist(pdgs);
   Method for PDGid*/
 

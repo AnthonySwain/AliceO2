@@ -75,10 +75,6 @@ bool file_exists3(const std::string &filename) {
 void analyzeSteps(){
     /* Main function that is called for the macro */
 
-    std::cout << pdgs << std::endl;
-    //PDG numbers to investigate 
-    //int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //Definitely need a way of synchronising this across files
-
     //Creates a TList to store the histograms
     TList* empty = createhistlist2(pdgs);
 

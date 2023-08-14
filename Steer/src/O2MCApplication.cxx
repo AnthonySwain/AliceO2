@@ -57,14 +57,14 @@
 namespace TonysDevelopmentArea{
 
 bool file_exists(const std::string &filename) {
-  //Checks whether a file exists on the system
-  //Input is the filepath of said file. 
+  /* Checks whether a file exists*/
   return std::filesystem::exists(filename);
 }
 
-TList* createhistlist(int (&pdgs)[8])
-//Creates and returns a list of histograms for each particle that is wanted to be investigated
-// Input is a int array of PDGid of particles.
+template <std::size_t W>
+TList* createhistlist(int (&pdgs)[W])
+/* Creates and returns a TList of histograms for each particle that is wanted to be investigated
+  Input is a int array of PDGid of particles to be investigated */
 {   
     TList *list = new TList();
     
@@ -78,7 +78,8 @@ TList* createhistlist(int (&pdgs)[8])
 }
 
 int numDigits(int number)
-{
+{ 
+  /* Computes the number of digits in an integer */
     int digits = 1;
 
     while (number>=10) {
@@ -92,21 +93,23 @@ template <std::size_t W>
 void savehistlist(TList* list, int (&pdgs)[W])
 { 
 
-  //Create new histlist if one already exists  
+  /* 
+  Saves a TList to a desired location (filepath)
+  If it already exists, it updates the existing TList, adding the new entries. 
+  */
+
   int pid = getpid();
-  
+
+  //Where to save it (current worker node)
   std::string filepath = "voxel_"+std::to_string(pid)+".root";
 
+
+  //Update if exists
   if (file_exists(filepath.c_str())){
     TFile *f = new TFile(filepath.c_str(),"UPDATE");
     std::cout<<"exists!"<<std::endl;
     for (int pdg : pdgs)
-    { 
-      //Should add to the histogram rather than save another one
-      //((TH3I*)list->FindObject((std::to_string(pdg)).c_str()))->Write(((std::to_string(pdg)).c_str()),TObject::kSingleKey);
-
-      //Then lets make it add
-      
+    {     
       TH3I* histogram = (TH3I*)f->Get((std::to_string(pdg)).c_str());
       histogram->Add((TH3I*)list->FindObject((std::to_string(pdg)).c_str()));
       histogram->Write((std::to_string(pdg)).c_str(),TObject::kOverwrite);
@@ -115,6 +118,7 @@ void savehistlist(TList* list, int (&pdgs)[W])
     delete f;
   }
 
+  //Create new if doesn't exist
   else {
     TFile *f = new TFile(filepath.c_str(),"CREATE");
     std::cout<<"Doesn't exist!"<<std::endl;
@@ -131,29 +135,30 @@ void savehistlist(TList* list, int (&pdgs)[W])
 }
 
 TList* openhistlist(std::string filepath)
-//Open and return an existing TList, just requries filepath
+//Open and return an existing TList
 {
     TFile * file = new TFile(filepath.c_str(),"READ");
     TList* list;
     file->GetObject("histlist",list);
     file->Close();
     return(list);
-    delete file;
-   
-
 }
-
 
 void AddToHistogram(std::string histogramlistfilepath, std::vector<std::array<float,4>> SteppingData)
 {
-/*  histogramlistfilepath - where to save or find the TList root file of the histograms 
-    std::vector<std::array<float,4>>  data - {x,y,z,PDGid}
+/*  
+
+  Writes step data to a histogram and saves it at the end of an event (when this function is called).
+  Seperated by particle, in a TList object saved in a root file.
+
+  histogramlistfilepath - where to save or find the TList root file of the histograms 
+  std::vector<std::array<float,4>>  data - {x,y,z,PDGid}
     
-    Writes data to a histogram and saves it. (Seperated by particle, (hopefully detector) in a TList object saved in a root file.)
 */
 
 int pdgs[8] = {11,13,-11,-13,22,111,211,-211}; //The particles we want to model.
 
+//Create a list of histograms for the particles 
 TList *list = createhistlist(pdgs);
   
 //Filling the histograms with data
@@ -172,15 +177,15 @@ for (auto &element : SteppingData)
   //else{continue;}
 }
 
+//Saves the TList to .root file (either creating new or updating depending if it exists already)
 savehistlist(list, pdgs);
 delete list; 
 }
 
-
 } //end namespace TonysDevelopmentArea
 
-
 /////////////////////////////////////////////////
+
 
 namespace o2
 {
@@ -205,7 +210,6 @@ void TypedVectorAttach(const char* name, fair::mq::Channel& channel, fair::mq::P
 
 O2MCApplication::O2MCApplication() //Constructor
 {
-  //std::vector<std::array<float,4>> data; 
   
 }
 
@@ -266,7 +270,6 @@ void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
   
   else{
   VoxelMap->addProperty(pos, true);
-  //std::cout << "BLACKHOLE Set, POSITION: " << x << ", " << y << ", " << z << "\n";
   }}
 
 void O2MCApplicationBase::BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
@@ -312,35 +315,26 @@ void O2MCApplicationBase::Stepping()
   //Get x,y,z locations
   float xstep,ystep,zstep;
   fMC->TrackPosition(xstep,ystep,zstep);
-
-  //If the voxel contains True, delete the particle! 
-  int i =0; 
   
-  //If voxelmap == nullptr we just continue - no voxel map loaded
-
+  /*
+  If the voxel contains True, delete the particle! 
+  If voxelmap == nullptr we just continue - no voxel map loaded
+  */
+  
   if (VoxelMap != nullptr){
     if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
       fMC->StopTrack();
       std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
-      i++;
       return;
     }
   }
 
-  if (i==1){
-    std::cout << "Particle has been deleted but code is continuing" << std::endl;
-  }
   
   
 
   //PDG number of the particle
   auto pdg = fMC->TrackPid();
 
-  //Get which volume the particle is in
-  //auto VolName = fMC->CurrentVolName();
-  //auto SensitiveDetector = fMC -> GetSensitiveDetector(VolName);
-
- 
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();
   auto& params = o2::GlobalProcessCutSimParam::Instance();
@@ -382,15 +376,15 @@ void O2MCApplicationBase::Stepping()
   if (mCutParams.stepTrackRefHook) {
     mTrackRefFcn(fMC);
   }
-  //Append the data of the step to the data vector
-
+  
+  //Create a datapoint of the useful info of this event
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
 
-  SteppingData.push_back(datapoint); //Push to vector containing all step data for this event.
-  /////////////////////////////////////////////////////////
-  // dispatch now to stepping function in FairRoot
+  //Push to vector containing all step data for this event.
+  SteppingData.push_back(datapoint); 
 
-  
+  // dispatch now to stepping function in FairRoot
+ 
   FairMCApplication::Stepping();
 }
 
@@ -485,12 +479,12 @@ void O2MCApplicationBase::finishEventCommon()
 
   ////////////////////////////////////////////////////////////////////////////
 
-  std::cout << "Before Adding to Histogram"<< std::endl; 
   //Saves the Histogram for this event
   TonysDevelopmentArea::AddToHistogram("HistList0",SteppingData);
 
-  //clears the data in the vector: data, for the next event.
-  std::cout << SteppingData.max_size() << "/n Size: " <<  SteppingData.size() << "/n Capacity: " << SteppingData.capacity() << std::endl; 
+  //clears the data in the vector: data, ready for the next event.
+  
+  // some info useful for debugging | std::cout << SteppingData.max_size() << "/n Size: " <<  SteppingData.size() << "/n Capacity: " << SteppingData.capacity() << std::endl; 
   SteppingData.clear(); 
 
   ////////////////////////////////////////////////////////////////////////////
@@ -536,7 +530,7 @@ void O2MCApplicationBase::BeginEvent()
 
   //Initialise vector for data of steps for the event 
   
-
+  //It was here. But it wasn't needed. Its memory remains.
 
   ////////////////////////////////////////
 }
