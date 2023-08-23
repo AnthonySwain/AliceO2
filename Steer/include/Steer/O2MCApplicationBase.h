@@ -67,7 +67,7 @@ class O2MCApplicationBase : public FairMCApplication
 
   std::vector<std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>> VoxelMaps; 
 
-  //Read all the voxelmaps, putting them in a vector of them 
+  //Read all the voxelmaps, putting them in a vector 
   for (const string& HashMapFileName : HashMapFilePaths){
     if (HashMapFileName != ""){
       if (std::filesystem::exists(HashMapFileName)){
@@ -76,6 +76,7 @@ class O2MCApplicationBase : public FairMCApplication
         VoxelMaps.push_back(VoxelMap);
     }
 
+  //I haven't taken care of this error with how the PDG vector will be handled if this happens but ah well... 
   else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
   }
   }

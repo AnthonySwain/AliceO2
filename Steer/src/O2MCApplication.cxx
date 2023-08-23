@@ -297,7 +297,7 @@ void O2MCApplicationBase::Stepping()
     size_t j = 0;
 
     // we want some PDG checking to be done here. 
-    if (PDGs[0]=="All"){
+    if (PDGs[i][0]=="All"){
       if (CurrentMap.get() != nullptr){
           if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
             fMC->StopTrack();
@@ -312,11 +312,11 @@ void O2MCApplicationBase::Stepping()
         }
     }
 
-    if (PDGs[0]=="All_but"){
+    if (PDGs[i][0]=="All_but"){
       //If the current PDG is in the list, don't delete, otherwise, delete
-      auto it = std::find(PDGs.begin(), PDGs.end(), pdg);
+      auto it = std::find(PDGs[i].begin(), PDGs[i].end(), pdg);
 
-      if (it != PDGs.end()) {
+      if (it != PDGs[i].end()) {
         //If it's in the list don't stop transport and carry on
         continue;}
         
@@ -337,8 +337,8 @@ void O2MCApplicationBase::Stepping()
 
     }
 
-    for (j; j<PDGs.size(); ++j){
-      if (pdg == PDGs[j]){
+    for (j; j<PDGs[i].size(); ++j){
+      if (pdg == PDGs[i][j]){
 
         if (CurrentMap.get() != nullptr){
           if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
