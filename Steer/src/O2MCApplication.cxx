@@ -210,98 +210,57 @@ O2MCApplication::O2MCApplication() //Constructor
   
 }
 
-vecgeom::Vector3D<float> O2MCApplicationBase::FindVoxelCenter(float x,float y, float z){
-  vecgeom::Vector3D<float> pos(x, y, z);
-  auto key = VoxelMap->getVoxelKey(pos);
-  return (VoxelMap->keyToPos(key));   
-}
-
-bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
+template <typename P, bool ScalarProperties>
+bool O2MCApplicationBase::VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperties>* CurrentMap, float x,float y, float z){
   vecgeom::Vector3D<float> pos(x, y, z);
   int length;
   //auto key = VoxelMap->getVoxelKey(pos);
 
-  if ((VoxelMap)->isOccupied(pos)){ //THIS IS A BAD METHOD, IT HAS LEAD TO PROBLEMS!! EXPLICITLY GET THE VALUE 
-
-  //if ((VoxelMap)->getProperties(pos,length)){
-
-  //}
-    //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
+  if ((CurrentMap)->isOccupied(pos)){ //Because of not checking whether a value is true or false, particular care should
+  //be taken to ensure map values are not set to false but rather left empty.
     return(true);
   }
 
   return(false);
 }
 
-float UniformRandom(float upper_bound, float lower_bound){
-  std::random_device rd;
+std::vector<std::pair<std::vector<std::string>, std::string>> ReadCSVFile(string filepath){
+  /* 
+  Reads CSV file of hashmaps and PDGs
+  */
+   std::ifstream file(filepath); 
+    if (!file.is_open()) {
+        std::cerr << "Failed to open the hashmap csv file." << std::endl;
+        return 1;
+    }
+    // Pair to store array of PDGs and filepaths
+    std::vector<std::pair<std::vector<std::string>, std::string>> data; 
 
-  // Use the Mersenne Twister algorithm for random number generation
-  std::mt19937 mt(rd());
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream ss(line);
 
-  // Create a uniform distribution for integers within the range
-  std::uniform_real_distribution<float> dist(lower_bound, upper_bound);
+        std::string arrayStr;
+        std::getline(ss, arrayStr, ','); // Read the array as a string
 
-  float random_number = dist(mt);
+        // Process the array string to extract individual elements
+        std::vector<std::string> array;
+        std::istringstream arrayStream(arrayStr);
+        char discard;
+        while (arrayStream >> discard) { // Discard '[' and ','
+            std::string cell;
+            if (std::getline(arrayStream, cell, ',')) {
+                array.push_back(cell);
+            }
+        }
 
-  return(random_number);
-}
+        std::string filePath;
+        ss >> filePath;
 
-void O2MCApplicationBase::RandomAllocation(int N, float Min, float Max){
-  //Assign N random voxels near the center as true (i.e blachholes )
-  for (int i =0; i < N; i++){
-  float x = UniformRandom(Min,Max);
-  float y = UniformRandom(Min,Max);
-  float z = UniformRandom(Min,Max);
-
-  AssignVoxelTrue(x,y,z);
-  }
-}
-
-void O2MCApplicationBase::AssignVoxelTrue(float x, float y, float z){
-  vecgeom::Vector3D<float> pos(x, y, z);
-  //auto key = (VoxelMap)->getVoxelKey(pos);
-
-  //If its already been set to true, don't touch:) 
-  if (VoxelCheck(x,y,z)){}
-  
-  else{
-  VoxelMap->addProperty(pos, true);
-  }}
-
-void O2MCApplicationBase::BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins){
-  float deltaY = (Ymax - Ymin)/YBins;
-  float deltaZ = (Zmax - Zmin)/ZBins;
-
-  for (float k = 0; k < thickness ;k++){
-  for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
-    for (float i = (float(Zmin) + deltaZ/2); i < float(Zmax); i += deltaZ ){
-      AssignVoxelTrue(Xval+k, j , i);
-  }}}}  
-
-void O2MCApplicationBase::BuildWallXYplane(float Zval, int thickness, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins){
-  float deltaY = (Ymax - Ymin)/YBins;
-  float deltaX = (Xmax - Xmin)/XBins;
-
-  for (float k = 0; k<thickness; k++){
-  for (float j = (float(Ymin) + deltaY/2); j < float(Ymax); j += deltaY ){
-    for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
-      AssignVoxelTrue(i, j , Zval+k);
-  }}
-  }
-}
-
-void O2MCApplicationBase::BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins){
-  float deltaZ = (Zmax - Zmin)/ZBins;
-  float deltaX = (Xmax - Xmin)/XBins;
-
-  for (float k = 0; k<thickness; k++){
-  for (float j = (float(Zmin) + deltaZ/2); j < float(Zmax); j += deltaZ ){
-    for (float i = (float(Xmin) + deltaX/2); i < float(Xmax); i += deltaX ){
-      AssignVoxelTrue(i, Yval +k, j);
-  }}
-  }
-}
+        data.push_back({array, filePath});
+    }
+    return data
+ }
 
 
 void O2MCApplicationBase::Stepping()
@@ -312,25 +271,92 @@ void O2MCApplicationBase::Stepping()
   //Get x,y,z locations
   float xstep,ystep,zstep;
   fMC->TrackPosition(xstep,ystep,zstep);
-  
-  /*
-  If the voxel contains True, delete the particle! 
-  If voxelmap == nullptr we just continue - no voxel map loaded
-  */
-  
-  if (VoxelMap != nullptr){
-    if (O2MCApplicationBase::VoxelCheck(xstep,ystep,zstep)){
-      fMC->StopTrack();
-      std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
-      return;
-    }
-  }
-
-  
-  
 
   //PDG number of the particle
-  auto pdg = fMC->TrackPid();
+  auto pdg = std::to_string(fMC->TrackPid());
+  
+  /*
+  Performs a PDG check and voxel check. This is quite a delicate operation so I will explain the details of it here and copy paste this to paragraph to relevant places in the code. 
+
+  CSV file contains:
+  [array of PDGs] , hashmap_filepath
+
+  array of PDGs represent the PDGs that will be deleted by the hashmap given by hashmap_filepath
+
+  Now, at the beginning of this array we can have "All" or "All_but" 
+  If All - all particles can be deleted by the voxel map
+  If All_but - all particles except the ones mentioned after e.g. [All_but,13,10] can be deleted by the voxel map, PDGs 13 and 10 can't be deleted by the map
+
+  The logic can be seen below. 
+  */
+
+  bool shouldBreak = false; //allows a double break out of the nested loops
+
+  for (size_t i = 0; i < VoxelMaps.size()  && !shouldBreak ; ++i){
+    auto& CurrentMap = VoxelMaps[i];
+    size_t j = 0;
+
+    // we want some PDG checking to be done here. 
+    if (PDGs[0]=="All"){
+      if (CurrentMap.get() != nullptr){
+          if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
+            fMC->StopTrack();
+            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+
+            //If particle transport is stopped, no point searching further -> break out
+            shouldBreak = true;
+            break;
+            }
+          
+          else{continue;}
+        }
+    }
+
+    if (PDGs[0]=="All_but"){
+      //If the current PDG is in the list, don't delete, otherwise, delete
+      auto it = std::find(PDGs.begin(), PDGs.end(), pdg);
+
+      if (it != PDGs.end()) {
+        //If it's in the list don't stop transport and carry on
+        continue;}
+        
+      else{
+        if (CurrentMap.get() != nullptr){
+          if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
+            fMC->StopTrack();
+            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+
+            //If particle transport is stopped, no point searching further -> break out
+            shouldBreak = true;
+            break;
+            }
+
+          else{continue;}
+          }
+        }
+
+    }
+
+    for (j; j<PDGs.size(); ++j){
+      if (pdg == PDGs[j]){
+
+        if (CurrentMap.get() != nullptr){
+          if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
+            fMC->StopTrack();
+            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+            
+            //If particle transport is stopped, no point searching further -> break out
+            shouldBreak = true;
+            break;
+          }
+        }
+      }
+    }  
+  }
+  
+  
+
+
 
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();

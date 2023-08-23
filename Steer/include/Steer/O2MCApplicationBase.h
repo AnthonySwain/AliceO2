@@ -50,48 +50,36 @@ class O2MCApplicationBase : public FairMCApplication
 
 
 
-  //Read hashmap from file - get the filename entered with the config from the code e.g.
+  //Read CSV from file - get the filename entered with the config from the code e.g.
   //o2-sim --configKeyValues="GlobalSimProcs.blackholeVoxelFile=/path/to/rootfile -g pythia8pp -n 20"
 
-  auto& params2 = o2::GlobalProcessCutSimParam::Instance();
-  std::string HashMapFileName = params2.blackholeVoxelFile;
 
-  //If the file exists, it is given to the hashmap, otherwise the hashmap becomes a nullptr
-  if (HashMapFileName != ""){
-  if (std::filesystem::exists(HashMapFileName)){
-    std::cout<< "File Exists" << std::endl;
-    VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(HashMapFileName.c_str()));
-  }
+
+  auto& params2 = o2::GlobalProcessCutSimParam::Instance();
+  std::string HashMaps_CSV_filepath = params2.blackholeVoxelFile;
+
+  //Reads CSV File
+  std::vector<std::pair<std::vector<std::string>, std::string>> MapData = ReadCSVFile(HashMaps_CSV_filepath);
+  
+  //Seperates into a vector of arrays of pdgs, and a vector of filepaths 
+  std::vector<std::vector<std::string>> PDGs = MapData.first;
+  std::vector<std::string> HashMapFilePaths = MapData.second;
+
+  std::vector<std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>> VoxelMaps; 
+
+  //Read all the voxelmaps, putting them in a vector of them 
+  for (const string& HashMapFileName : HashMapFilePaths){
+    if (HashMapFileName != ""){
+      if (std::filesystem::exists(HashMapFileName)){
+        std::cout<< "File Exists" << std::endl;
+        VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(HashMapFileName.c_str()));
+        VoxelMaps.push_back(VoxelMap);
+    }
 
   else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
   }
+  }
   
-
-  /*
-  For when the hashmap was created here, rather than read (now outdated as this is obviously not the best method...)
-
-  vecgeom::Vector3D<float> MinValues(-1000,-1000,-3000);
-  vecgeom::Vector3D<float> Lengths(2000,2000,6000); 
-  int NumbBins[3] = {200,200,600}; 
-
-  VoxelMap = std::make_unique<vecgeom::FlatVoxelHashMap<bool,true>>(MinValues, Lengths, NumbBins[0],NumbBins[1],NumbBins[2]);
-  std::cout << "Number of Filled Voxels: " << VoxelMap->size() << std::endl; 
-
-  
-  BuildWallZYplane(100,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-  
-  BuildWallZYplane(-230,30, MinValues[2],MinValues[2]+Lengths[2], MinValues[1], MinValues[1]+Lengths[1], NumbBins[2], NumbBins[1]);
-
-  BuildWallXZplane(200,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
-  BuildWallXZplane(-230,30, MinValues[0],MinValues[0]+Lengths[0], MinValues[2], MinValues[2]+Lengths[2], NumbBins[0], NumbBins[2]);
-
-  AssignVoxelTrue(0,0,0);
-
-  VoxelMap->print();
-
-  VoxelMap->dumpToTFile("HashMap1.root"); 
-  */
-
   initTrackRefHook();   
 
 
@@ -107,19 +95,11 @@ class O2MCApplicationBase : public FairMCApplication
   void InitGeometry() override;
   bool MisalignGeometry() override;
   void AddParticles() override;
+  std::vector<std::pair<std::vector<std::string>, std::string>> ReadCSVFile(); 
 
-  /////////////////////////////////////////////
-  //These are remenants from when the hashmap was created at runtime.
-  //Now, the hashmap should be made by root macros and the filepath passed to the simulation
-  bool VoxelCheck(float x, float y, float z);
-  void AssignVoxelTrue(float x, float y, float z);
-  void RandomAllocation(int n, float Min, float Max);
-  vecgeom::Vector3D<float> FindVoxelCenter(float x,float y, float z);
-  void BuildWallZYplane(float Xval, int thickness, int Zmin, int Zmax, int Ymin, int Ymax, int ZBins, int YBins);
-  void BuildWallXYplane(float Zval, int thickness, int Xmin, int Xmax, int Ymin, int Ymax, int XBins, int YBins);
-  void BuildWallXZplane(float Yval, int thickness, int Xmin, int Xmax, int Zmin, int Zmax, int XBins, int ZBins);
-  /////////////////////////////////////////////
 
+  template <typename P, bool ScalarProperties>
+  bool VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperties>*  CurrentMap, float x, float y, float z);
   // specific implementation of our hard geometry limits
   double TrackingRmax() const override { return mCutParams.maxRTracking; }
   double TrackingZmax() const override { return mCutParams.maxAbsZTracking; }
