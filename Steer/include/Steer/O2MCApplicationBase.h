@@ -38,8 +38,12 @@ namespace steer
 class O2MCApplicationBase : public FairMCApplication
 {
   //////////////////////////////////////////
-  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;
+  //std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;
   std::vector<std::array<float,4>> SteppingData;
+  std::vector<std::vector<std::string>> PDGs;
+  std::vector<std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>> VoxelMaps; 
+  std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;
+        
   /////////////////////////////////
  public:
   O2MCApplicationBase() : FairMCApplication(), mCutParams(o2::conf::SimCutParams::Instance()) {initTrackRefHook();}
@@ -63,23 +67,30 @@ class O2MCApplicationBase : public FairMCApplication
   std::vector<std::pair<std::vector<std::string>, std::string>> MapData = ReadCSVFile(HashMaps_CSV_filepath);
   
   //Seperates into a vector of arrays of pdgs, and a vector of filepaths 
-  std::vector<std::vector<std::string>> PDGs = MapData.first;
-  std::vector<std::string> HashMapFilePaths = MapData.second;
+  std::vector<std::string> HashMapFilePaths;
 
-  std::vector<std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>> VoxelMaps; 
+  for (const auto& pair : MapData){
 
+    PDGs.push_back(pair.first);
+    HashMapFilePaths.push_back(pair.second);
+  }
+
+
+
+
+  
   //Read all the voxelmaps, putting them in a vector 
-  for (const string& HashMapFileName : HashMapFilePaths){
+  for (const auto& HashMapFileName : HashMapFilePaths){
     if (HashMapFileName != ""){
       if (std::filesystem::exists(HashMapFileName)){
         std::cout<< "File Exists" << std::endl;
         VoxelMap.reset(vecgeom::FlatVoxelHashMap<bool,true>::readFromTFile(HashMapFileName.c_str()));
-        VoxelMaps.push_back(VoxelMap);
+        VoxelMaps.push_back(std::move(VoxelMap));
     }
-
+  
   //I haven't taken care of this error with how the PDG vector will be handled if this happens but ah well... 
-  else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
-  }
+      else { std::cout << "Hashmap does not exist, using no hashmap." << std::endl;}
+    }
   }
   
   initTrackRefHook();   
@@ -97,7 +108,7 @@ class O2MCApplicationBase : public FairMCApplication
   void InitGeometry() override;
   bool MisalignGeometry() override;
   void AddParticles() override;
-  std::vector<std::pair<std::vector<std::string>, std::string>> ReadCSVFile(); 
+  std::vector<std::pair<std::vector<std::string>, std::string>> ReadCSVFile(std::string); 
 
 
   template <typename P, bool ScalarProperties>

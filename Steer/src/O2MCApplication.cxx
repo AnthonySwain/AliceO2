@@ -224,42 +224,57 @@ bool O2MCApplicationBase::VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperti
   return(false);
 }
 
-std::vector<std::pair<std::vector<std::string>, std::string>> ReadCSVFile(string filepath){
+std::vector<std::pair<std::vector<std::string>, std::string>> O2MCApplicationBase::ReadCSVFile(std::string filepath){
   /* 
   Reads CSV file of hashmaps and PDGs
   */
    std::ifstream file(filepath); 
-    if (!file.is_open()) {
-        std::cerr << "Failed to open the hashmap csv file." << std::endl;
-        return 1;
-    }
+   
     // Pair to store array of PDGs and filepaths
     std::vector<std::pair<std::vector<std::string>, std::string>> data; 
 
     std::string line;
     while (std::getline(file, line)) {
+        std::cout << "Line " << line << std::endl;
         std::istringstream ss(line);
 
         std::string arrayStr;
-        std::getline(ss, arrayStr, ','); // Read the array as a string
+        std::getline(ss, arrayStr, '|'); // Read the array as a string
 
         // Process the array string to extract individual elements
         std::vector<std::string> array;
-        std::istringstream arrayStream(arrayStr);
-        char discard;
-        while (arrayStream >> discard) { // Discard '[' and ','
-            std::string cell;
-            if (std::getline(arrayStream, cell, ',')) {
-                array.push_back(cell);
-            }
+             
+        std::string string= "";
+        std::cout << arrayStr << " Array Str" << std::endl;
+        for (auto &ch : arrayStr){
+      
+          if (ch == '['){
+             continue; // Skip '[' and ']' characters
+          }
+          
+          if (ch == ']') {
+            array.push_back(string);
+            std::cout << "Value pushed back " << string << "<- string | array ->" << array[0] << std::endl;
+            string = "";
+            continue; // Skip '[' and ']' characters
+          }
+          if (ch ==','){
+            array.push_back(string);
+            string = "";
+            continue;
+          }
+          string += ch;
+
+          std::cout << "String " << string<< std::endl;
         }
 
         std::string filePath;
+        
         ss >> filePath;
-
+      
         data.push_back({array, filePath});
     }
-    return data
+    return data;
  }
 
 
@@ -273,8 +288,9 @@ void O2MCApplicationBase::Stepping()
   fMC->TrackPosition(xstep,ystep,zstep);
 
   //PDG number of the particle
-  auto pdg = std::to_string(fMC->TrackPid());
-  
+  auto pdg_base = fMC->TrackPid();
+  auto pdg = std::to_string(pdg_base);
+
   /*
   Performs a PDG check and voxel check. This is quite a delicate operation so I will explain the details of it here and copy paste this to paragraph to relevant places in the code. 
 
@@ -293,15 +309,17 @@ void O2MCApplicationBase::Stepping()
   bool shouldBreak = false; //allows a double break out of the nested loops
 
   for (size_t i = 0; i < VoxelMaps.size()  && !shouldBreak ; ++i){
-    auto& CurrentMap = VoxelMaps[i];
-    size_t j = 0;
 
+    std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>& CurrentMap = VoxelMaps[i];
+    
     // we want some PDG checking to be done here. 
     if (PDGs[i][0]=="All"){
+      
+      
       if (CurrentMap.get() != nullptr){
           if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
             fMC->StopTrack();
-            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+            //std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
 
             //If particle transport is stopped, no point searching further -> break out
             shouldBreak = true;
@@ -324,7 +342,7 @@ void O2MCApplicationBase::Stepping()
         if (CurrentMap.get() != nullptr){
           if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
             fMC->StopTrack();
-            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+            //std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
 
             //If particle transport is stopped, no point searching further -> break out
             shouldBreak = true;
@@ -333,17 +351,19 @@ void O2MCApplicationBase::Stepping()
 
           else{continue;}
           }
+        else{continue;}
         }
 
     }
 
-    for (j; j<PDGs[i].size(); ++j){
+    for (size_t j = 0; j<PDGs[i].size(); ++j){
+      
       if (pdg == PDGs[i][j]){
 
         if (CurrentMap.get() != nullptr){
           if (O2MCApplicationBase::VoxelCheck(CurrentMap.get(),xstep,ystep,zstep)){
             fMC->StopTrack();
-            std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
+            //std::cout<<"Particle Deleted! "<< xstep << ", " << ystep  << ", " << zstep << "\n";
             
             //If particle transport is stopped, no point searching further -> break out
             shouldBreak = true;
@@ -401,7 +421,7 @@ void O2MCApplicationBase::Stepping()
   }
   
   //Create a datapoint of the useful info of this event
-  std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg)};
+  std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg_base)};
 
   //Push to vector containing all step data for this event.
   SteppingData.push_back(datapoint); 
