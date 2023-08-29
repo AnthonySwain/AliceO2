@@ -68,7 +68,7 @@ TList* createhistlist(int (&pdgs)[W])
     for (int i : pdgs){
         std::string name1 = std::to_string(i);
         std::string name2 = "Histogram"+std::to_string(i);
-        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,100,-3000,3000);
+        TH3I *h1 = new TH3I(name1.c_str(), name2.c_str(),100,-1000,1000,100,-1000,1000,300,-13000,13000);
         list -> Add(h1);
     }
    return (list);
@@ -221,9 +221,8 @@ bool O2MCApplicationBase::VoxelCheck(float x,float y, float z){
   int length;
   //auto key = VoxelMap->getVoxelKey(pos);
 
-  if ((VoxelMap)->isOccupied(pos)){ //THIS IS A BAD METHOD, IT HAS LEAD TO PROBLEMS!! EXPLICITLY GET THE VALUE 
-
-  //if ((VoxelMap)->getProperties(pos,length)){
+  if ((VoxelMap)->isOccupied(pos)){ //Because of not checking whether a value is true or false, particular care should
+  //be taken to ensure map values are not set to false but rather left empty.
 
   //}
     //std::cout << "IS BLACKHOLE Particle Deleted, POSITION: " << x << ", " << y << ", " << z << "\n"; 
