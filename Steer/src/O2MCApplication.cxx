@@ -34,9 +34,6 @@
 #include <CommonUtils/FileSystemUtils.h>
 #include "SimConfig/GlobalProcessCutSimParam.h"
 
-////////////////////////////////////////////////
-//#include "/home/answain/alice/O2/TonysDevelopmentArea/FillHistogram.h"
-
 #include <VecGeom/base/FlatVoxelHashMap.h> //Voxel hashmap
 #include <iostream>
 #include <unistd.h>
@@ -224,7 +221,129 @@ bool O2MCApplicationBase::VoxelCheck(vecgeom::FlatVoxelHashMap<P, ScalarProperti
   return(false);
 }
 
-std::vector<std::pair<std::vector<std::string>, std::string>> O2MCApplicationBase::ReadCSVFile(std::string filepath){
+std::vector<std::string> O2MCApplicationBase::splitString(const std::string &s, char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
+
+O2MCApplicationBase::Cylinder_Data O2MCApplicationBase::parseCSVLine(const std::string &line) {
+    O2MCApplicationBase::Cylinder_Data entry;
+    std::vector<std::string> tokens = splitString(line, ',');
+    
+    if (tokens.size() < 4) {
+        std::cerr << "Invalid CSV line: " << line << std::endl;
+        return entry;
+    }
+
+    if (tokens[0] == "Zmin"){
+      return entry;
+    }
+    
+    entry.Zmin = std::stof(tokens[0]);
+    entry.Zmax = std::stof(tokens[1]);
+    entry.radius = std::stof(tokens[2]);
+    entry.To_check = tokens[3];
+
+
+    
+
+    for (size_t i = 4; i < tokens.size(); ++i) {
+        entry.PDGs.push_back(std::stoi(tokens[i]));
+    }
+    
+    return entry;
+}
+
+
+bool O2MCApplicationBase::cylinder_check(float Zmin, float Zmax, float radius, float X, float Y, float Z){   
+    //If position is inside the cylinder return false, if outside, return true
+    //Assumes the cylindrical axis is on the Z axis
+   
+    if (Z > Zmin && Z < Zmax){
+       float current_radius = sqrt( pow(X,2) + pow(Y,2));
+        
+        if (current_radius > radius){
+            return true;
+        }
+
+        else{
+        return false; 
+         }
+    }
+
+    else{
+        return false; 
+    }
+}
+
+bool O2MCApplicationBase::PDG_check(std::vector<int> PDGs, std::string To_check, int pdg){
+
+   //Returns true if the PDG should be considered, otherwise skips to the next volume
+    if (To_check == "All"){
+        return true;
+    }
+
+    if (To_check == "All_but"){
+        bool is_in = std::find(PDGs.begin(), PDGs.end(), pdg) != PDGs.end();
+        
+        if (is_in){
+            return false;
+        }
+
+        else{
+            return true;
+        }
+    }
+
+    if (To_check == "Only"){
+        bool is_in_only = std::find(PDGs.begin(), PDGs.end(), pdg) != PDGs.end();
+        
+        if (is_in_only){
+            return true;
+        }
+
+        else{
+            return false;
+        }
+    }
+
+    //Just skips everything. The code shouldn't really hit here unless a file hasn't been given
+    else{
+        return false;
+    }
+}
+
+
+
+std::vector<O2MCApplicationBase::Cylinder_Data> O2MCApplicationBase::readCSVFileCylinderCuts(const std::string &filename) {
+    std::vector<O2MCApplicationBase::Cylinder_Data> dataEntries;
+    std::ifstream file(filename);
+    std::string line;
+    
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return dataEntries;
+    }
+    
+    while (std::getline(file, line)) {
+        dataEntries.push_back(parseCSVLine(line));
+    }
+    
+    file.close();
+    return dataEntries;
+}
+
+
+
+
+std::vector<std::pair<std::vector<std::string>, std::string>> O2MCApplicationBase::ReadCSVFileVoxelMaps(std::string filepath){
   /* 
   Reads CSV file of hashmaps and PDGs
   */
@@ -232,6 +351,11 @@ std::vector<std::pair<std::vector<std::string>, std::string>> O2MCApplicationBas
    
     // Pair to store array of PDGs and filepaths
     std::vector<std::pair<std::vector<std::string>, std::string>> data; 
+
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filepath << std::endl;
+        return data; // Return an empty array /  w/e if file couldn't be opened
+    }
 
     std::string line;
     while (std::getline(file, line)) {
@@ -306,8 +430,9 @@ void O2MCApplicationBase::Stepping()
   The logic can be seen below. 
   */
 
-  bool shouldBreak = false; //allows a double break out of the nested loops
+  //Gets skipped over if no csv file is read in the constructor
 
+  bool shouldBreak = false; //allows a double break out of the nested loops
   for (size_t i = 0; i < VoxelMaps.size()  && !shouldBreak ; ++i){
 
     std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>& CurrentMap = VoxelMaps[i];
@@ -377,6 +502,21 @@ void O2MCApplicationBase::Stepping()
   
 
 
+  for (const auto& entry : Data_on_cylinders){
+        bool checked_pdg = PDG_check(entry.PDGs,entry.To_check,pdg_base);
+
+        if (checked_pdg){
+          bool stop_track = cylinder_check(entry.Zmin,entry.Zmax,entry.radius, xstep,ystep,zstep);
+          
+          
+          if (stop_track){
+            fMC->StopTrack();
+            break;
+          
+          } 
+        }
+    }
+
 
   // check the max time of flight condition
   const auto tof = fMC->TrackTime();
@@ -424,8 +564,9 @@ void O2MCApplicationBase::Stepping()
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg_base)};
 
   //Push to vector containing all step data for this event.
-  SteppingData.push_back(datapoint); 
-
+  if (fMC->IsTrackAlive()){
+    SteppingData.push_back(datapoint); 
+  }
   // dispatch now to stepping function in FairRoot
  
   FairMCApplication::Stepping();
