@@ -47,6 +47,7 @@ struct GlobalProcessCutSimParam : public o2::conf::ConfigurableParamHelper<Globa
 
   std::string blackholeVoxelFile = "";
   std::string GeoCutsCSVFile = "";
+  bool SaveSteps = false; 
   // boilerplate stuff + make principal key "GlobalSimProcs"
   O2ParamDef(GlobalProcessCutSimParam, "GlobalSimProcs");
 };

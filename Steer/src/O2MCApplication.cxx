@@ -561,12 +561,17 @@ void O2MCApplicationBase::Stepping()
   }
   
   //Create a datapoint of the useful info of this event
+
+
   std::array<float,4> datapoint = {xstep,ystep,zstep,float(pdg_base)};
 
   //Push to vector containing all step data for this event.
-  if (fMC->IsTrackAlive()){
-    SteppingData.push_back(datapoint); 
+  if (SaveSteps){
+    if (fMC->IsTrackAlive()){
+      SteppingData.push_back(datapoint); 
+    }
   }
+
   // dispatch now to stepping function in FairRoot
  
   FairMCApplication::Stepping();
@@ -662,15 +667,13 @@ void O2MCApplicationBase::finishEventCommon()
   LOG(info) << "Longest track time is " << mLongestTrackTime;
 
   ////////////////////////////////////////////////////////////////////////////
+  if (SaveSteps){
+    //Saves the Histogram for this event
+    TonysDevelopmentArea::AddToHistogram("HistList0",SteppingData);
 
-  //Saves the Histogram for this event
-  TonysDevelopmentArea::AddToHistogram("HistList0",SteppingData);
-
-  //clears the data in the vector: data, ready for the next event.
-  
-  // some info useful for debugging | std::cout << SteppingData.max_size() << "/n Size: " <<  SteppingData.size() << "/n Capacity: " << SteppingData.capacity() << std::endl; 
-  SteppingData.clear(); 
-
+    //clears the data in the vector: data, ready for the next event.
+    SteppingData.clear(); 
+  }
   ////////////////////////////////////////////////////////////////////////////
 
 

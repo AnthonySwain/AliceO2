@@ -55,6 +55,7 @@ class O2MCApplicationBase : public FairMCApplication
   std::vector<std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>>> VoxelMaps; 
   std::unique_ptr<vecgeom::FlatVoxelHashMap<bool,true>> VoxelMap;
   std::vector<Cylinder_Data> Data_on_cylinders;
+  bool SaveSteps;   //Whether or not to save step location & PDG (this is NOT VMCStepLogger)
   /////////////////////////////////
  public:
   O2MCApplicationBase() : FairMCApplication(), mCutParams(o2::conf::SimCutParams::Instance()) {initTrackRefHook();}
@@ -99,7 +100,8 @@ class O2MCApplicationBase : public FairMCApplication
   std::string CylinderCutsCSVfile = params2.GeoCutsCSVFile;
   Data_on_cylinders = readCSVFileCylinderCuts(CylinderCutsCSVfile);
   
-
+  //Whether or not to save step location & PDG (this is NOT VMCStepLogger)
+  SaveSteps = params2.SaveSteps;
 
   initTrackRefHook();   
 
