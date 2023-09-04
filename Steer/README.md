@@ -26,7 +26,7 @@ This module contains the following submodules:
 ## Voxel Maps
 Voxel maps used are created using VecGeom - https://gitlab.cern.ch/VecGeom/VecGeom/-/blob/89a05d148cc708d4efc2e7b0eb6e2118d2610057/VecGeom/base/FlatVoxelHashMap.h#L207
 
-To pass voxel-maps to the simulation, create a .txt file that looks like:  <br>
+To pass voxel-maps to the simulation, create a .txt file that looks like:  <br> <br>
 [All]|example1.root<br>
 [All_but, 13]|example2.root<br>
 [10,-10]|example3.root<br>
