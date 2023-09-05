@@ -270,59 +270,43 @@ bool O2MCApplicationBase::cylinder_check(float Zmin, float Zmax, float radius, f
        float current_radius = sqrt( pow(X,2) + pow(Y,2));
         
         if (current_radius > radius){
-            return true;
-        }
+            return true;}
 
-        else{
-        return false; 
-         }
+        else{return false;}
     }
 
-    else{
-        return false; 
-    }
+    else{return false;}
 }
 
 bool O2MCApplicationBase::PDG_check(std::vector<int> PDGs, std::string To_check, int pdg){
 
    //Returns true if the PDG should be considered, otherwise skips to the next volume
-    if (To_check == "All"){
-        return true;
-    }
+    if (To_check == "All"){return true;}
 
     if (To_check == "All_but"){
         bool is_in = std::find(PDGs.begin(), PDGs.end(), pdg) != PDGs.end();
         
-        if (is_in){
-            return false;
-        }
+        if (is_in){return false;}
 
-        else{
-            return true;
-        }
+        else{return true;}
     }
 
     if (To_check == "Only"){
         bool is_in_only = std::find(PDGs.begin(), PDGs.end(), pdg) != PDGs.end();
         
-        if (is_in_only){
-            return true;
-        }
+        if (is_in_only){return true;}
 
-        else{
-            return false;
-        }
+        else{return false;}
     }
 
     //Just skips everything. The code shouldn't really hit here unless a file hasn't been given
-    else{
-        return false;
-    }
+    else{return false;}
 }
 
 
 
 std::vector<O2MCApplicationBase::Cylinder_Data> O2MCApplicationBase::readCSVFileCylinderCuts(const std::string &filename) {
+    // For reading the CSV file with the cylindrical cuts 
     std::vector<O2MCApplicationBase::Cylinder_Data> dataEntries;
     std::ifstream file(filename);
     std::string line;

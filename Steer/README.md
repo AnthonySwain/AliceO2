@@ -34,7 +34,7 @@ To pass voxel-maps to the simulation, create a .txt file that looks like:  <br> 
 [All_but, 22]|example5.root<br>
 [All]|example6.root<br>
 
-where exampleX.root is the filepath to the map (in this case, the same directory where the simlulations are run) <br>
+where exampleX.root is the filepath to a map (in this case, the same directory where the simlulations are run) <br>
 All - stop transport of all particles in areas of the map set to True <br>
 All_but - stop transport of all but specified particles in areas of the map set to true <br>
 individual pdgs, i.e. [13,-13,10,-10,...] - stop the transport of these specific particles in the areas of the map set to true <br>
@@ -54,3 +54,10 @@ Include the addition to the simulation command to use the maps (if the .csv file
 This is relativitly light-weight compared to VMCStepLogger but has significantly reduced features. Only saves X,Y,Z,pdg for each step of a particles transport. Can be analysed using the macros found in: https://github.com/AnthonySwain/AliceO2MacroDev/tree/main/StepandHit_Analysis 
 <br>
 To enable this, include "--configKeyValues="GlobalSimProcs.SaveSteps=true" in the simulation command.
+
+## PDGs
+Unfortunately, due to silly implementaiton - not all PDGs are saved. There is a list found in O2MCApplication called PDGs which specifies which PDGs to save. 
+
+# Note
+I have tried and failed to put all the functions into a seperate file to make the readability better. For now, most the functions are
+defined in O2MCApplicationBase.h and the contents in O2MCApplication. Additinoally there are some functions completely defined in O2MCApplication under the namespace "TonysDevelopmentArea". 
